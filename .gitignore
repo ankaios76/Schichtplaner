@@ -1,0 +1,6 @@
+# server secrets
+server/.env.local
+server/data.db
+
+# dependencies
+server/node_modules

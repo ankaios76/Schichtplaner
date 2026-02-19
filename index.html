@@ -1,0 +1,558 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Schichtplaner</title>
+  <link rel="stylesheet" href="styles.css?v=20260219d" />
+</head>
+<body>
+  <div id="app">
+    <section class="login" id="setupView" hidden>
+      <div class="login-card">
+        <div class="brand">
+          <div class="brand-mark" id="setupLogo">SP</div>
+          <div>
+            <div class="brand-title" id="setupTitle">Schichtplaner</div>
+            <div class="brand-sub">Ersteinrichtung</div>
+          </div>
+        </div>
+        <h1>Ersteinrichtung</h1>
+        <p class="muted">Bitte Firmenname angeben. Optional Logo hochladen.</p>
+        <label class="field">
+          <span>Firmenname *</span>
+          <input id="companyName" type="text" placeholder="z. B. Plusnet GmbH" />
+        </label>
+        <label class="field">
+          <span>Firmenlogo (optional)</span>
+          <input id="companyLogo" type="file" accept="image/*" />
+        </label>
+        <div class="hint error" id="setupError" hidden>Bitte Firmenname eingeben.</div>
+        <button class="primary" id="setupBtn">Weiter</button>
+      </div>
+    </section>
+
+    <section class="login" id="supervisorSetupView" hidden>
+      <div class="login-card">
+        <div class="brand">
+          <div class="brand-mark" id="supervisorSetupLogo">SP</div>
+          <div>
+            <div class="brand-title" id="supervisorSetupTitle">Schichtplaner</div>
+            <div class="brand-sub">Ersten Supervisor anlegen</div>
+          </div>
+        </div>
+        <h1>Supervisor anlegen</h1>
+        <p class="muted">Lege den ersten Supervisor-Zugang an.</p>
+        <label class="field">
+          <span>Name</span>
+          <input id="supervisorName" type="text" placeholder="Vorname Nachname" />
+        </label>
+        <label class="field">
+          <span>Benutzername *</span>
+          <input id="supervisorUser" type="text" placeholder="z. B. admin" />
+        </label>
+        <label class="field">
+          <span>Passwort *</span>
+          <input id="supervisorPass" type="password" placeholder="••••••••" />
+        </label>
+        <label class="field">
+          <span>Bundesland</span>
+          <select id="supervisorState"></select>
+        </label>
+        <div class="hint error" id="supervisorSetupError" hidden>Bitte Benutzername und Passwort eingeben.</div>
+        <button class="primary" id="supervisorSetupBtn">Supervisor erstellen</button>
+      </div>
+    </section>
+
+    <section class="login" id="loginView">
+      <div class="login-card">
+        <div class="brand">
+          <div class="brand-mark" id="loginLogo">SP</div>
+          <div>
+            <div class="brand-title">Schichtplaner</div>
+            <div class="brand-sub" id="loginCompany">Plusnet GmbH</div>
+          </div>
+        </div>
+        <h1>Login</h1>
+        <div class="muted">Build 20260219d</div>
+        <p class="muted">Wähle eine Rolle, um das Frontend zu starten. Backend ist nicht verbunden.</p>
+        <form id="loginForm" onsubmit="handleLogin(event); return false;">
+          <label class="field">
+            <span>Benutzername</span>
+            <input id="loginUser" type="text" placeholder="Plusnet-Kürzel" autocomplete="username" />
+          </label>
+          <label class="field">
+            <span>Passwort</span>
+            <input id="loginPass" type="password" placeholder="••••••••" autocomplete="current-password" />
+          </label>
+          <div class="hint error" id="loginError" hidden>Login fehlgeschlagen.</div>
+          <button class="primary" id="loginBtn" type="submit">Einloggen</button>
+        </form>
+      </div>
+    </section>
+
+    <section class="shell" id="appView" hidden>
+      <aside class="sidebar">
+        <div class="sidebar-header">
+          <div class="brand-mark">P</div>
+          <div class="brand-title">Plusnet GmbH</div>
+        </div>
+        <nav class="menu" id="menuList"></nav>
+        <div class="sidebar-footer">
+          <div class="support">Support</div>
+          <div class="user">
+            <div class="avatar" id="sidebarAvatar">NH</div>
+            <div>
+              <div class="user-name" id="sidebarName">Norbert Hengsteler</div>
+              <div class="user-role" id="sidebarRole">Benutzer</div>
+            </div>
+          </div>
+          <button class="ghost logout" id="logoutBtn">Logout</button>
+        </div>
+      </aside>
+
+      <main class="main">
+        <header class="topbar">
+          <div class="search">
+            <input type="search" placeholder="Personen, Funktionen usw. suchen" />
+          </div>
+          <div class="date" id="todayText"></div>
+          <h2 id="greeting">Hallo, Norbert</h2>
+        </header>
+
+        <section class="grid" id="defaultDashboard">
+          <div class="stack">
+            <div class="card">
+              <div class="card-title">Inbox-Highlights</div>
+              <div class="card-sub">Sie sind auf dem neuesten Stand. Neue To-dos werden hier angezeigt.</div>
+            </div>
+
+            <div class="card">
+              <div class="card-row">
+                <div class="card-title">Diese Woche</div>
+                <div class="card-action">Alle Ereignisse ▾</div>
+              </div>
+              <div class="placeholder">Diese Woche gibt es keine anstehenden Events für Direkt Unterstellte.</div>
+              <div class="card-link">Kalender öffnen →</div>
+            </div>
+
+            <div class="card">
+              <div class="card-row">
+                <div class="card-title">Jubiläen und Geburtstage</div>
+                <div class="card-action">Nächste 7 Tage ▾</div>
+              </div>
+              <div class="placeholder">Keine Jubiläen und Geburtstage in dieser Woche</div>
+            </div>
+          </div>
+
+          <div class="stack">
+            <div class="card timer">
+              <div class="card-title">Zeiterfassung</div>
+              <div class="timer-body">
+                <button class="icon-btn">▶</button>
+                <div class="timer-time">0:00 <span>Arbeitszeit</span></div>
+                <button class="icon-btn">■</button>
+              </div>
+            </div>
+
+            <div class="card profile">
+              <div class="profile-header">
+                <div class="profile-photo" id="profilePhoto"></div>
+                <div>
+                  <div class="profile-name" id="profileName">Norbert Hengsteler</div>
+                  <div class="profile-role" id="profilePosition">Network Engineer</div>
+                </div>
+              </div>
+              <div class="profile-actions">
+                <button class="ghost">Anwesenheiten</button>
+                <button class="ghost">Abwesenheit</button>
+                <button class="ghost">Dokumente</button>
+              </div>
+            </div>
+
+            <div class="card absence">
+              <div class="card-title">Abwesenheit</div>
+              <div class="absence-days">30 Tg.</div>
+              <div class="absence-list">
+                <div class="absence-item">
+                  <div class="tag">Rufbereitschaft</div>
+                  <div class="muted">Bestätigt</div>
+                  <div class="range">23. Feb. - 2. März</div>
+                </div>
+                <div class="absence-item">
+                  <div class="tag">Rufbereitschaft</div>
+                  <div class="muted">Bestätigt</div>
+                  <div class="range">2 - 9. März</div>
+                </div>
+                <div class="absence-item">
+                  <div class="tag">Rufbereitschaft</div>
+                  <div class="muted">Bestätigt</div>
+                  <div class="range">9 - 16. März</div>
+                </div>
+              </div>
+              <div class="card-row">
+                <div class="card-link">5 weitere →</div>
+                <button class="ghost">+ beantragen</button>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section class="page" id="pageUserDashboard" hidden>
+          <div class="page-header">
+            <h3>Team-Kalender</h3>
+            <p class="muted">Übersicht der nächsten 7 Kalendertage (inkl. Bereitschaften).</p>
+          </div>
+          <div class="card">
+            <div class="card-row">
+              <div class="card-title" id="userWeekLabel"></div>
+              <div class="muted">Heute zuerst</div>
+            </div>
+            <div class="legend" id="statusLegend"></div>
+            <div class="calendar-grid" id="userTeamCalendar"></div>
+          </div>
+        </section>
+
+        <section class="page" id="pageAdminDashboard" hidden>
+          <div class="page-header">
+            <h3>Teamleiter-Dashboard</h3>
+            <p class="muted">Überblick über dein Team, Schichttausch und Krankmeldungen.</p>
+          </div>
+          <div class="page-tools">
+            <div class="filters">
+              <button class="primary" id="adminAddMember">+ Mitarbeiter anlegen</button>
+            </div>
+          </div>
+          <div class="profile-grid">
+            <div class="card">
+              <div class="card-title">Team-Mitglieder</div>
+              <div class="team-grid" id="adminTeamList"></div>
+            </div>
+            <div class="card">
+              <div class="card-title">Schichttausch-Anfragen</div>
+              <div class="swap-list" id="adminSwapList"></div>
+            </div>
+            <div class="card">
+              <div class="card-title">Krankmeldungen</div>
+              <div class="swap-list" id="adminSickList"></div>
+            </div>
+          </div>
+        </section>
+
+        <section class="page" id="pageHierarchy" hidden>
+          <div class="page-header">
+            <h3>Unternehmensstruktur</h3>
+            <p class="muted">Company → Bereich → Abteilung → Team → Subteam</p>
+          </div>
+          <div class="page-tools">
+            <button class="ghost" id="addRoot">+ Neues Element</button>
+            <div class="muted">Nur Supervisor kann bearbeiten.</div>
+          </div>
+          <div class="hierarchy" id="hierarchyTree"></div>
+        </section>
+
+        <section class="page" id="pageTeam" hidden>
+          <div class="page-header">
+            <h3>Team-Übersicht</h3>
+            <p class="muted">Team-Mitglieder bearbeiten und Schichttausch-Anfragen prüfen.</p>
+          </div>
+          <div class="page-tools">
+            <div class="filters">
+              <input type="search" id="teamSearch" placeholder="Teammitglied suchen" />
+              <select id="teamFilter">
+                <option value="all">Alle Teams</option>
+              </select>
+            </div>
+            <div class="filters">
+              <button class="ghost" id="addTeam">+ Team anlegen</button>
+              <button class="primary" id="addMember">+ Benutzer hinzufügen</button>
+            </div>
+          </div>
+          <div class="team-grid" id="teamList"></div>
+          <div class="card swap-requests">
+            <div class="card-row">
+              <div>
+                <div class="card-title">Schichttausch-Anfragen</div>
+                <div class="muted">Anfragen prüfen und freigeben oder ablehnen.</div>
+              </div>
+              <div class="muted" id="swapCount">0 offen</div>
+            </div>
+            <div class="swap-list" id="swapList"></div>
+          </div>
+        </section>
+
+        <section class="page" id="pageUser" hidden>
+          <div class="page-header">
+            <h3>Mein Profil</h3>
+            <p class="muted">Arbeitszeit, Profilbild und Zugangsdaten verwalten.</p>
+          </div>
+
+          <div class="profile-grid">
+            <div class="card">
+              <div class="card-title">Wöchentliche Arbeitszeit</div>
+              <div class="field-row">
+                <label class="field inline">
+                  <span>Soll-Stunden</span>
+                  <input id="weeklyTarget" type="number" min="1" max="60" step="0.5" value="38.5" />
+                </label>
+                <div class="stat" id="weeklyStatus">Diese Woche: 0h (0h zu wenig)</div>
+              </div>
+            </div>
+
+            <div class="card">
+              <div class="card-title">Profilbild</div>
+              <div class="upload">
+                <input type="file" id="avatarUpload" accept="image/*" />
+                <button class="ghost" id="removeAvatar">Bild entfernen</button>
+              </div>
+            </div>
+
+            <div class="card">
+              <div class="card-title">Passwort ändern</div>
+              <div class="field-row">
+                <input type="password" placeholder="Aktuelles Passwort" />
+                <input type="password" placeholder="Neues Passwort" />
+                <button class="primary">Speichern</button>
+              </div>
+            </div>
+
+            <div class="card">
+              <div class="card-title">Schichttausch</div>
+              <p class="muted">Ein Schichttausch wird beim nächsten Login an das Team angezeigt.</p>
+              <button class="primary" id="swapRequest">Schichttausch anfragen</button>
+              <div class="hint" id="swapHint" hidden>Gespeichert. Teammitglieder sehen den Hinweis beim nächsten Login.</div>
+            </div>
+          </div>
+
+          <div class="card templates">
+            <div class="card-title">Schicht-Templates</div>
+            <div class="muted">Kernarbeitszeit: 07:00 - 20:00 Uhr</div>
+            <div class="template-grid" id="templateGrid"></div>
+            <div class="template-actions">
+              <button class="ghost" id="applyTemplate">Template auf Monat anwenden</button>
+              <div class="muted" id="templateNotice"></div>
+            </div>
+          </div>
+
+          <div class="card calendar">
+            <div class="calendar-header">
+              <div>
+                <div class="card-title">Kalender</div>
+                <div class="muted">Wochenstart Montag, Wochenende Sonntag</div>
+              </div>
+              <div class="calendar-controls">
+                <button class="ghost" id="prevMonth">◀</button>
+                <div id="monthLabel"></div>
+                <button class="ghost" id="nextMonth">▶</button>
+              </div>
+            </div>
+            <div class="calendar-controls">
+              <button class="ghost" id="clearMonth">Monat leeren</button>
+            </div>
+            <div class="calendar-grid" id="calendarGrid"></div>
+            <div class="calendar-legend">
+              <div>Arbeitszeit eingetragen</div>
+              <div class="muted" id="weeklyTotal">Woche 0h / 38.5h</div>
+            </div>
+          </div>
+        </section>
+      </main>
+    </section>
+
+    <div class="modal" id="dayModal" hidden>
+      <div class="modal-card">
+        <div class="modal-header">
+          <h4 id="modalDate">Tag bearbeiten</h4>
+          <button class="ghost" id="closeModal">×</button>
+        </div>
+        <div class="modal-body">
+          <div class="segments" id="segments"></div>
+          <button class="ghost" id="addSegment">+ Zeitblock hinzufügen</button>
+          <div class="modal-summary">
+            <div>Pause: 0:30 h</div>
+            <div id="dayTotal">Gesamt: 0h</div>
+          </div>
+          <label class="field">
+            <span>Tätigkeit</span>
+            <select id="dayStatus">
+              <option value="Support">Support</option>
+              <option value="Projekt">Projekt</option>
+              <option value="Betriebsrat">Betriebsrat</option>
+              <option value="Urlaub">Urlaub</option>
+              <option value="Urlaub halber Tag">Urlaub halber Tag</option>
+              <option value="Krank">Krank</option>
+              <option value="Rufbereitschaft Voice/Daten">Rufbereitschaft Voice/Daten</option>
+              <option value="Rufbereitschaft Fraud">Rufbereitschaft Fraud</option>
+            </select>
+          </label>
+          <div class="muted" id="holidayNotice"></div>
+        </div>
+        <div class="modal-footer">
+          <button class="ghost" id="deleteDay">Tag löschen</button>
+          <button class="primary" id="saveDay">Speichern</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="modal" id="hierarchyModal" hidden>
+      <div class="modal-card">
+        <div class="modal-header">
+          <h4 id="hierarchyModalTitle">Element bearbeiten</h4>
+          <button class="ghost" id="closeHierarchyModal">×</button>
+        </div>
+        <div class="modal-body">
+          <label class="field">
+            <span>Typ</span>
+            <select id="hierarchyType">
+              <option value="company">Company</option>
+              <option value="bereich">Bereich</option>
+              <option value="abteilung">Abteilung</option>
+              <option value="team">Team</option>
+              <option value="subteam">Subteam</option>
+            </select>
+          </label>
+          <label class="field">
+            <span>Name</span>
+            <input id="hierarchyName" type="text" placeholder="z. B. Network Ops" />
+          </label>
+        </div>
+        <div class="modal-footer">
+          <button class="ghost" id="deleteHierarchy">Löschen</button>
+          <button class="primary" id="saveHierarchy">Speichern</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="modal" id="memberModal" hidden>
+      <div class="modal-card">
+        <div class="modal-header">
+          <h4 id="memberModalTitle">Teammitglied bearbeiten</h4>
+          <button class="ghost" id="closeMemberModal">×</button>
+        </div>
+        <div class="modal-body">
+          <label class="field">
+            <span>Name</span>
+            <input id="memberName" type="text" placeholder="Vorname Nachname" />
+          </label>
+          <label class="field">
+            <span>E-Mail</span>
+            <input id="memberEmail" type="email" placeholder="name@firma.de" />
+          </label>
+          <label class="field">
+            <span>Telefon</span>
+            <input id="memberPhone" type="tel" placeholder="+49 123 456789" />
+          </label>
+          <label class="field">
+            <span>Funktion</span>
+            <select id="memberRole">
+              <option value="Mitarbeiter">Mitarbeiter</option>
+              <option value="FK">FK</option>
+              <option value="Azubi">Azubi</option>
+              <option value="extern">extern</option>
+            </select>
+          </label>
+          <label class="field">
+            <span>Systemrolle</span>
+            <select id="memberSystemRole">
+              <option value="user">Benutzer</option>
+              <option value="admin">Admin</option>
+              <option value="supervisor">Supervisor</option>
+            </select>
+          </label>
+          <label class="field">
+            <span>Team</span>
+            <select id="memberTeam">
+            </select>
+          </label>
+          <label class="field">
+            <span>Status</span>
+            <select id="memberStatus">
+              <option value="aktiv">Aktiv</option>
+              <option value="abwesend">Abwesend</option>
+              <option value="onboarding">Onboarding</option>
+            </select>
+          </label>
+          <label class="field">
+            <span>Bundesland</span>
+            <select id="memberState"></select>
+          </label>
+          <label class="field">
+            <span>Benutzername</span>
+            <input id="memberUser" type="text" placeholder="z. B. vorname.nachname" />
+          </label>
+          <label class="field">
+            <span>Passwort</span>
+            <input id="memberPass" type="password" placeholder="Neues Passwort setzen" />
+          </label>
+          <div class="hint error" id="memberError" hidden>Bitte alle Pflichtfelder ausfüllen.</div>
+        </div>
+        <div class="modal-footer">
+          <button class="ghost" id="deleteMember">Löschen</button>
+          <button class="primary" id="saveMember">Speichern</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="modal" id="memberDetailModal" hidden>
+      <div class="modal-card">
+        <div class="modal-header">
+          <h4>Benutzerprofil</h4>
+          <button class="ghost" id="closeMemberDetail">×</button>
+        </div>
+        <div class="modal-body" id="memberDetailBody"></div>
+        <div class="modal-footer">
+          <button class="ghost" id="closeMemberDetailFooter">Schließen</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="modal" id="swapModal" hidden>
+      <div class="modal-card">
+        <div class="modal-header">
+          <h4>Schichttausch anfragen</h4>
+          <button class="ghost" id="closeSwapModal">×</button>
+        </div>
+        <div class="modal-body">
+          <label class="field">
+            <span>Datum</span>
+            <input id="swapDate" type="date" />
+          </label>
+          <label class="field">
+            <span>Kommentar</span>
+            <input id="swapReason" type="text" placeholder="z. B. Arzttermin" />
+          </label>
+        </div>
+        <div class="modal-footer">
+          <button class="ghost" id="cancelSwap">Abbrechen</button>
+          <button class="primary" id="submitSwap">Anfrage senden</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="modal" id="teamModal" hidden>
+      <div class="modal-card">
+        <div class="modal-header">
+          <h4>Team anlegen</h4>
+          <button class="ghost" id="closeTeamModal">×</button>
+        </div>
+        <div class="modal-body">
+          <label class="field">
+            <span>Abteilung</span>
+            <select id="teamParent"></select>
+          </label>
+          <label class="field">
+            <span>Teamname</span>
+            <input id="teamName" type="text" placeholder="z. B. Network Ops" />
+          </label>
+        </div>
+        <div class="modal-footer">
+          <button class="ghost" id="cancelTeam">Abbrechen</button>
+          <button class="primary" id="saveTeam">Speichern</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="app.js?v=20260219d"></script>
+</body>
+</html>
