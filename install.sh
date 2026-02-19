@@ -22,6 +22,7 @@ echo "==> Installing server dependencies"
 cd "$SERVER_DIR"
 npm install
 
+cd "$APP_DIR"
 echo "==> Deploying frontend to /var/www/html"
 mkdir -p /var/www/html
 cp -r "$APP_DIR"/* /var/www/html/
