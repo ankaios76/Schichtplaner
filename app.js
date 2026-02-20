@@ -299,7 +299,14 @@ function setCompanyBranding(settings) {
     [loginLogo, setupLogo, supervisorSetupLogo, dbSetupLogo, sidebarLogo].forEach((el) => {
       if (!el) return;
       el.style.backgroundImage = `url(${settings.logo})`;
+      el.style.backgroundColor = "#ffffff";
       el.textContent = "";
+    });
+  } else {
+    [loginLogo, setupLogo, supervisorSetupLogo, dbSetupLogo, sidebarLogo].forEach((el) => {
+      if (!el) return;
+      el.style.backgroundImage = "";
+      el.style.backgroundColor = "var(--accent)";
     });
   }
   if (settings?.accent) {
