@@ -21,8 +21,31 @@ if [ -z "$COMPANY_LOGO" ] && [ -f "$DOCS_DIR/company-logo.png" ]; then
   COMPANY_LOGO="$DOCS_DIR/company-logo.png"
 fi
 
+LOGO_DATA=""
 if [ -z "$COMPANY_LOGO" ] && [ -f "$DB_PATH" ] && command -v sqlite3 >/dev/null 2>&1; then
   LOGO_DATA=$(sqlite3 "$DB_PATH" "select logo from settings where id=1;" | tr -d '\r' || true)
+fi
+
+if [ -z "$LOGO_DATA" ] && command -v curl >/dev/null 2>&1; then
+  set +o pipefail
+  for url in http://127.0.0.1/api/settings http://127.0.0.1:3000/api/settings; do
+    LOGO_DATA=$(curl -fsS "$url" 2>/dev/null | python3 - <<'PY'
+import json, sys
+try:
+  data = json.load(sys.stdin)
+  print(data.get("logo",""))
+except Exception:
+  pass
+PY
+    )
+    if [ -n "$LOGO_DATA" ]; then
+      break
+    fi
+  done
+  set -o pipefail
+fi
+
+if [ -z "$COMPANY_LOGO" ]; then
   case "$LOGO_DATA" in
     data:image/*\;base64,*)
     TMP_LOGO="$(mktemp --suffix=.png)"
