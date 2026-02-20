@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Schichtplaner</title>
-  <link rel="stylesheet" href="styles.css?v=20260220j" />
+  <link rel="stylesheet" href="styles.css?v=20260220k" />
 </head>
 <body>
   <div id="app">
@@ -546,6 +546,23 @@
       </div>
     </div>
 
+    <div class="modal" id="memberConfirmModal" hidden>
+      <div class="modal-card">
+        <div class="modal-header">
+          <h4>Benutzer anlegen</h4>
+          <button class="ghost" id="closeMemberConfirm">×</button>
+        </div>
+        <div class="modal-body">
+          <p class="muted">Bitte Zugangsdaten kopieren. Erst danach kannst du fortfahren.</p>
+          <pre class="hint" id="memberConfirmDetails"></pre>
+          <div class="field-row">
+            <button class="ghost" id="memberConfirmCopy" type="button">Daten kopieren</button>
+            <button class="primary" id="memberConfirmContinue" type="button" disabled>Weiter</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
     <div class="modal" id="memberDetailModal" hidden>
       <div class="modal-card">
         <div class="modal-header">
@@ -606,6 +623,6 @@
     </div>
   </div>
 
-  <script src="app.js?v=20260220j"></script>
+  <script src="app.js?v=20260220k"></script>
 </body>
 </html>

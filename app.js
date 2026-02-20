@@ -129,6 +129,12 @@ const memberDetailBody = document.getElementById("memberDetailBody");
 const closeMemberDetail = document.getElementById("closeMemberDetail");
 const closeMemberDetailFooter = document.getElementById("closeMemberDetailFooter");
 
+const memberConfirmModal = document.getElementById("memberConfirmModal");
+const closeMemberConfirm = document.getElementById("closeMemberConfirm");
+const memberConfirmDetails = document.getElementById("memberConfirmDetails");
+const memberConfirmCopy = document.getElementById("memberConfirmCopy");
+const memberConfirmContinue = document.getElementById("memberConfirmContinue");
+
 const swapList = document.getElementById("swapList");
 const swapCount = document.getElementById("swapCount");
 const swapModal = document.getElementById("swapModal");
@@ -162,6 +168,7 @@ const state = {
   teamWeekShifts: {},
   hierarchyDraft: null,
   memberDraft: null,
+  pendingMember: null,
 };
 
 const typeLabels = {
@@ -647,6 +654,15 @@ function formatHours(minutes) {
   return `${h}:${m.toString().padStart(2, "0")}h`;
 }
 
+function randomPassword(length = 14) {
+  const chars = "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789!#$%+-_";
+  let out = "";
+  for (let i = 0; i < length; i += 1) {
+    out += chars[Math.floor(Math.random() * chars.length)];
+  }
+  return out;
+}
+
 function calculateDayTotal(segments) {
   let total = 0;
   segments.forEach((seg) => {
@@ -1054,6 +1070,62 @@ function closeMember() {
   memberModal.hidden = true;
 }
 
+function closeMemberConfirmModal() {
+  if (memberConfirmModal) memberConfirmModal.hidden = true;
+  if (memberConfirmContinue) memberConfirmContinue.disabled = true;
+  if (memberConfirmCopy) memberConfirmCopy.textContent = "Daten kopieren";
+}
+
+function showMemberConfirm(payload) {
+  if (!memberConfirmModal) return;
+  const details = [
+    `Name: ${payload.name}`,
+    `Benutzername: ${payload.username}`,
+    `Passwort: ${payload.password}`,
+    `Systemrolle: ${payload.systemRole === "admin" ? "Teamleiter" : payload.systemRole === "supervisor" ? "Supervisor" : "Benutzer"}`,
+    `Funktion: ${payload.role}`,
+    `Team: ${payload.team}`,
+  ];
+  if (payload.email) details.push(`E-Mail: ${payload.email}`);
+  if (payload.phone) details.push(`Telefon: ${payload.phone}`);
+  if (payload.state) details.push(`Bundesland: ${payload.state}`);
+  memberConfirmDetails.textContent = details.join("\n");
+  memberConfirmContinue.disabled = true;
+  memberConfirmCopy.textContent = "Daten kopieren";
+
+  memberConfirmCopy.onclick = async () => {
+    try {
+      await navigator.clipboard.writeText(memberConfirmDetails.textContent);
+      memberConfirmCopy.textContent = "Kopiert";
+      memberConfirmContinue.disabled = false;
+    } catch {
+      memberConfirmCopy.textContent = "Kopieren fehlgeschlagen";
+      setTimeout(() => {
+        memberConfirmCopy.textContent = "Daten kopieren";
+      }, 2000);
+    }
+  };
+
+  memberConfirmContinue.onclick = async () => {
+    if (!state.pendingMember) return;
+    try {
+      await apiFetch("/api/users", {
+        method: "POST",
+        body: JSON.stringify(state.pendingMember),
+      });
+      await loadData();
+      closeMember();
+      closeMemberConfirmModal();
+      state.pendingMember = null;
+    } catch (err) {
+      memberError.textContent = "Speichern fehlgeschlagen (Benutzername evtl. vergeben).";
+      memberError.hidden = false;
+    }
+  };
+
+  memberConfirmModal.hidden = false;
+}
+
 async function saveMemberDraft() {
   const name = memberName.value.trim();
   const role = memberRole.value.trim() || "Mitarbeiter";
@@ -1061,11 +1133,6 @@ async function saveMemberDraft() {
   const passwordValue = memberPass.value.trim();
   if (!name) return;
   if (state.memberDraft.mode === "add" && !usernameValue) return;
-  if (state.memberDraft.mode === "add" && !passwordValue) {
-    memberError.textContent = "Passwort ist erforderlich.";
-    memberError.hidden = false;
-    return;
-  }
   if (!memberTeam.value) return;
   memberError.hidden = true;
 
@@ -1110,19 +1177,12 @@ async function saveMemberDraft() {
       email: memberEmail.value.trim(),
       phone: memberPhone.value.trim(),
       username: usernameValue,
-      password: passwordValue,
+      password: passwordValue || randomPassword(),
       state: memberState.value,
     };
-    try {
-      await apiFetch("/api/users", {
-        method: "POST",
-        body: JSON.stringify(payload),
-      });
-    } catch (err) {
-      memberError.textContent = "Speichern fehlgeschlagen (Benutzername evtl. vergeben).";
-      memberError.hidden = false;
-      return;
-    }
+    state.pendingMember = payload;
+    showMemberConfirm(payload);
+    return;
   }
 
   await loadData();
@@ -1755,6 +1815,7 @@ adminTeamList.addEventListener("click", (event) => {
 saveMemberBtn.addEventListener("click", saveMemberDraft);
 deleteMemberBtn.addEventListener("click", deleteMember);
 closeMemberModal.addEventListener("click", closeMember);
+if (closeMemberConfirm) closeMemberConfirm.addEventListener("click", closeMemberConfirmModal);
 
 closeMemberDetail.addEventListener("click", closeMemberDetailModal);
 closeMemberDetailFooter.addEventListener("click", closeMemberDetailModal);
