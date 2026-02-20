@@ -856,7 +856,9 @@ function renderTeam() {
   const teamScope = state.user.role === "admin" ? String(state.user.team || "") : filter;
 
   const members = state.members.filter((member) => {
-    if (state.user.role === "supervisor" && member.systemRole === "supervisor") return false;
+    if (state.user.role === "supervisor") {
+      if (member.systemRole !== "supervisor" && member.systemRole !== "admin") return false;
+    }
     const matchesSearch = member.name.toLowerCase().includes(search) || member.role.toLowerCase().includes(search);
     const matchesTeam = teamScope === "all" ? true : String(member.team || "") === String(teamScope);
     return matchesSearch && matchesTeam;
