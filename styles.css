@@ -40,6 +40,16 @@ h1, h2, h3, h4 {
   place-items: center;
   background: linear-gradient(135deg, #f5f7f8 0%, #ecf2f4 50%, #f6e8ee 100%);
   padding: 32px;
+  gap: 16px;
+}
+
+.login-footer {
+  text-align: center;
+}
+
+.heart {
+  color: #d12c2c;
+  font-weight: 700;
 }
 
 .login-card {
