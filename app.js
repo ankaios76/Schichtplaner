@@ -183,10 +183,10 @@ const childTypes = {
 const menus = {
   supervisor: [
     { id: "hierarchy", label: "Unternehmen" },
-    { id: "team", label: "Teamleader" },
+    { id: "team", label: "Teamleiter" },
   ],
   admin: [
-    { id: "dashboard", label: "Teamleader-Dashboard" },
+    { id: "dashboard", label: "Teamleiter-Dashboard" },
     { id: "team", label: "Team" },
     { id: "user", label: "Meine Arbeitszeit" },
   ],
@@ -454,8 +454,8 @@ function applyRoleUI() {
 
   if (teamPageTitle && teamPageDesc) {
     if (role === "supervisor") {
-      teamPageTitle.textContent = "Teamleader";
-      teamPageDesc.textContent = "Supervisoren und Teamleader anlegen, Teams zuordnen und Benutzer verwalten.";
+      teamPageTitle.textContent = "Teamleiter";
+      teamPageDesc.textContent = "Supervisoren und Teamleiter anlegen, Teams zuordnen und Benutzer verwalten.";
     } else {
       teamPageTitle.textContent = "Team-Übersicht";
       teamPageDesc.textContent = "Team-Mitglieder bearbeiten und Schichttausch-Anfragen prüfen.";
@@ -581,7 +581,7 @@ function renderTeam() {
     const teamLabel = state.teamOptions.find((t) => String(t.id) === String(member.team))?.label || member.team || "-";
     const canEditMember = canEdit || (state.user.role === "user" && state.user.memberId === member.id);
     const systemRoleLabel =
-      member.systemRole === "supervisor" ? "Supervisor" : member.systemRole === "admin" ? "Teamleader" : "Benutzer";
+      member.systemRole === "supervisor" ? "Supervisor" : member.systemRole === "admin" ? "Teamleiter" : "Benutzer";
     card.innerHTML = `
       <div class="avatar">${initials(member.name)}</div>
       <div><strong>${member.name}</strong></div>
@@ -1044,7 +1044,7 @@ function openMemberModal({ mode, memberId = null }) {
   memberSystemRole.disabled = state.user.role !== "supervisor";
   memberSystemRole.innerHTML =
     state.user.role === "supervisor"
-      ? "<option value=\"admin\">Teamleader</option><option value=\"supervisor\">Supervisor</option>"
+      ? "<option value=\"admin\">Teamleiter</option><option value=\"supervisor\">Supervisor</option>"
       : "<option value=\"user\">Benutzer</option>";
 
   memberModal.hidden = false;
@@ -1071,7 +1071,7 @@ async function saveMemberDraft() {
 
   if (state.user.role === "supervisor") {
     if (memberSystemRole.value !== "admin" && memberSystemRole.value !== "supervisor") {
-      memberError.textContent = "Supervisor kann nur Teamleader oder Supervisor anlegen.";
+      memberError.textContent = "Supervisor kann nur Teamleiter oder Supervisor anlegen.";
       memberError.hidden = false;
       return;
     }
@@ -1420,7 +1420,7 @@ function handleLogin(event) {
       loginView.hidden = true;
       appView.hidden = false;
 
-      const roleLabel = member.systemRole === "supervisor" ? "Supervisor" : member.systemRole === "admin" ? "Teamleader" : "Benutzer";
+      const roleLabel = member.systemRole === "supervisor" ? "Supervisor" : member.systemRole === "admin" ? "Teamleiter" : "Benutzer";
       greeting.textContent = `Hallo, ${member.name.split(" ")[0]}`;
       todayText.textContent = formatDate(new Date());
       sidebarName.textContent = member.name;
