@@ -318,6 +318,11 @@ if (BOOTSTRAP_MODE) {
             execSync(`sudo -u postgres psql -c "ALTER USER ${user} WITH PASSWORD '${safePass}';"`, { stdio: "ignore" });
           }
           execSync(`sudo -u postgres psql -c "GRANT ALL PRIVILEGES ON DATABASE ${name} TO ${user};"`, { stdio: "ignore" });
+          execSync(`sudo -u postgres psql -d ${name} -c "GRANT USAGE, CREATE ON SCHEMA public TO ${user};"`, { stdio: "ignore" });
+          execSync(
+            `sudo -u postgres psql -d ${name} -c "ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON TABLES TO ${user};"`,
+            { stdio: "ignore" }
+          );
         } else {
           execSync(`mysql -uroot -e "CREATE DATABASE IF NOT EXISTS ${name};"`, { stdio: "ignore" });
           execSync(
