@@ -4,6 +4,7 @@ set -euo pipefail
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 DOCS_DIR="$ROOT_DIR/docs"
 DB_PATH="$ROOT_DIR/server/data.db"
+ENV_FILE="$ROOT_DIR/server/.env.local"
 
 COMPANY_NAME="${COMPANY_NAME:-}"
 COMPANY_LOGO="${COMPANY_LOGO:-}"
@@ -24,6 +25,22 @@ fi
 LOGO_DATA=""
 if [ -z "$COMPANY_LOGO" ] && [ -f "$DB_PATH" ] && command -v sqlite3 >/dev/null 2>&1; then
   LOGO_DATA=$(sqlite3 "$DB_PATH" "select logo from settings where id=1;" | tr -d '\r' || true)
+fi
+
+if [ -f "$ENV_FILE" ]; then
+  set -a
+  . "$ENV_FILE"
+  set +a
+fi
+
+if [ -z "$LOGO_DATA" ] && [ "${DB_CLIENT:-}" = "postgres" ] && command -v psql >/dev/null 2>&1; then
+  if [ -n "${DB_HOST:-}" ] && [ "${DB_HOST}" != "127.0.0.1" ] && [ "${DB_HOST}" != "localhost" ]; then
+    LOGO_DATA=$(PGPASSWORD="${DB_PASSWORD:-}" psql -h "${DB_HOST}" -p "${DB_PORT:-5432}" -U "${DB_USER:-}" -d "${DB_NAME:-}" -tAc "select logo from settings where id=1;" 2>/dev/null | tr -d '\r' || true)
+  else
+    if command -v sudo >/dev/null 2>&1; then
+      LOGO_DATA=$(sudo -u postgres psql -d "${DB_NAME:-sp_pln}" -tAc "select logo from settings where id=1;" 2>/dev/null | tr -d '\r' || true)
+    fi
+  fi
 fi
 
 if [ -z "$LOGO_DATA" ] && command -v curl >/dev/null 2>&1; then
@@ -48,7 +65,15 @@ fi
 if [ -z "$COMPANY_LOGO" ]; then
   case "$LOGO_DATA" in
     data:image/*\;base64,*)
-    TMP_LOGO="$(mktemp --suffix=.png)"
+    LOGO_MIME="${LOGO_DATA%%;base64,*}"
+    LOGO_MIME="${LOGO_MIME#data:}"
+    LOGO_EXT="png"
+    if [ "$LOGO_MIME" = "image/jpeg" ] || [ "$LOGO_MIME" = "image/jpg" ]; then
+      LOGO_EXT="jpg"
+    elif [ "$LOGO_MIME" = "image/svg+xml" ]; then
+      LOGO_EXT="svg"
+    fi
+    TMP_LOGO="$(mktemp --suffix=.$LOGO_EXT)"
     python3 - <<'PY'
 import os, sys, base64
 data = os.environ.get("LOGO_DATA","")
