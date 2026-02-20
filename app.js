@@ -84,6 +84,9 @@ const adminTeamList = document.getElementById("adminTeamList");
 const adminSwapList = document.getElementById("adminSwapList");
 const adminSickList = document.getElementById("adminSickList");
 const adminAddMember = document.getElementById("adminAddMember");
+const teamPageTitle = document.getElementById("teamPageTitle");
+const teamPageDesc = document.getElementById("teamPageDesc");
+const swapRequestsCard = document.getElementById("swapRequestsCard");
 
 const dayModal = document.getElementById("dayModal");
 const modalDate = document.getElementById("modalDate");
@@ -180,11 +183,11 @@ const childTypes = {
 const menus = {
   supervisor: [
     { id: "hierarchy", label: "Unternehmen" },
-    { id: "team", label: "Team" },
+    { id: "team", label: "Teamleader" },
     { id: "user", label: "Meine Arbeitszeit" },
   ],
   admin: [
-    { id: "dashboard", label: "Teamleiter-Dashboard" },
+    { id: "dashboard", label: "Teamleader-Dashboard" },
     { id: "team", label: "Team" },
     { id: "user", label: "Meine Arbeitszeit" },
   ],
@@ -448,6 +451,17 @@ function applyRoleUI() {
   addRootBtn.hidden = role !== "supervisor";
   addMemberBtn.hidden = role === "user";
   addTeamBtn.hidden = role === "user";
+  if (swapRequestsCard) swapRequestsCard.hidden = role === "supervisor";
+
+  if (teamPageTitle && teamPageDesc) {
+    if (role === "supervisor") {
+      teamPageTitle.textContent = "Teamleader";
+      teamPageDesc.textContent = "Supervisoren und Teamleader anlegen, Teams zuordnen und Benutzer verwalten.";
+    } else {
+      teamPageTitle.textContent = "Team-Übersicht";
+      teamPageDesc.textContent = "Team-Mitglieder bearbeiten und Schichttausch-Anfragen prüfen.";
+    }
+  }
 
   if (role === "admin" || role === "user") {
     const teamValue = String(state.user.team || "unassigned");
@@ -566,12 +580,14 @@ function renderTeam() {
     card.className = "team-card";
     const teamLabel = state.teamOptions.find((t) => String(t.id) === String(member.team))?.label || member.team || "-";
     const canEditMember = canEdit || (state.user.role === "user" && state.user.memberId === member.id);
+    const systemRoleLabel =
+      member.systemRole === "supervisor" ? "Supervisor" : member.systemRole === "admin" ? "Teamleader" : "Benutzer";
     card.innerHTML = `
       <div class="avatar">${initials(member.name)}</div>
       <div><strong>${member.name}</strong></div>
       <div class="muted">${member.role} · ${teamLabel}</div>
       <div class="badges">
-        <span class="badge">${member.systemRole}</span>
+        <span class="badge">${systemRoleLabel}</span>
         <span class="badge">${member.status}</span>
       </div>
       <div class="swap-actions">
@@ -1028,7 +1044,7 @@ function openMemberModal({ mode, memberId = null }) {
   memberSystemRole.disabled = state.user.role !== "supervisor";
   memberSystemRole.innerHTML =
     state.user.role === "supervisor"
-      ? "<option value=\"user\">Benutzer</option><option value=\"admin\">Admin</option><option value=\"supervisor\">Supervisor</option>"
+      ? "<option value=\"user\">Benutzer</option><option value=\"admin\">Teamleader</option><option value=\"supervisor\">Supervisor</option>"
       : "<option value=\"user\">Benutzer</option>";
 
   memberModal.hidden = false;
@@ -1396,7 +1412,7 @@ function handleLogin(event) {
       loginView.hidden = true;
       appView.hidden = false;
 
-      const roleLabel = member.systemRole === "supervisor" ? "Supervisor" : member.systemRole === "admin" ? "Admin" : "Benutzer";
+      const roleLabel = member.systemRole === "supervisor" ? "Supervisor" : member.systemRole === "admin" ? "Teamleader" : "Benutzer";
       greeting.textContent = `Hallo, ${member.name.split(" ")[0]}`;
       todayText.textContent = formatDate(new Date());
       sidebarName.textContent = member.name;

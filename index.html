@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Schichtplaner</title>
-  <link rel="stylesheet" href="styles.css?v=20260220e" />
+  <link rel="stylesheet" href="styles.css?v=20260220f" />
 </head>
 <body>
   <div id="app">
@@ -267,7 +267,7 @@
 
         <section class="page" id="pageAdminDashboard" hidden>
           <div class="page-header">
-            <h3>Teamleiter-Dashboard</h3>
+            <h3>Teamleader-Dashboard</h3>
             <p class="muted">Überblick über dein Team, Schichttausch und Krankmeldungen.</p>
           </div>
           <div class="page-tools">
@@ -305,8 +305,8 @@
 
         <section class="page" id="pageTeam" hidden>
           <div class="page-header">
-            <h3>Team-Übersicht</h3>
-            <p class="muted">Team-Mitglieder bearbeiten und Schichttausch-Anfragen prüfen.</p>
+            <h3 id="teamPageTitle">Team-Übersicht</h3>
+            <p class="muted" id="teamPageDesc">Team-Mitglieder bearbeiten und Schichttausch-Anfragen prüfen.</p>
           </div>
           <div class="page-tools">
             <div class="filters">
@@ -321,7 +321,7 @@
             </div>
           </div>
           <div class="team-grid" id="teamList"></div>
-          <div class="card swap-requests">
+          <div class="card swap-requests" id="swapRequestsCard">
             <div class="card-row">
               <div>
                 <div class="card-title">Schichttausch-Anfragen</div>
@@ -507,7 +507,7 @@
             <span>Systemrolle</span>
             <select id="memberSystemRole">
               <option value="user">Benutzer</option>
-              <option value="admin">Admin</option>
+              <option value="admin">Teamleader</option>
               <option value="supervisor">Supervisor</option>
             </select>
           </label>
@@ -605,6 +605,6 @@
     </div>
   </div>
 
-  <script src="app.js?v=20260220e"></script>
+  <script src="app.js?v=20260220f"></script>
 </body>
 </html>
