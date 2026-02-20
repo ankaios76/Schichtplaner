@@ -876,10 +876,12 @@ function renderTeam() {
     const canEditMember = canEdit || (state.user.role === "user" && state.user.memberId === member.id);
     const systemRoleLabel =
       member.systemRole === "supervisor" ? "Supervisor" : member.systemRole === "admin" ? "Teamleiter" : "Benutzer";
+    const roleTeamLine =
+      state.user.role === "supervisor" ? "" : `<div class="muted">${member.role} · ${teamLabel}</div>`;
     card.innerHTML = `
       <div class="avatar">${initials(member.name)}</div>
       <div><strong>${member.name}</strong></div>
-      <div class="muted">${member.role} · ${teamLabel}</div>
+      ${roleTeamLine}
       <div class="badges">
         <span class="badge">${systemRoleLabel}</span>
         <span class="badge">${member.status}</span>
