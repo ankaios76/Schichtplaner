@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Schichtplaner</title>
-  <link rel="stylesheet" href="styles.css?v=20260220bh" />
+  <link rel="stylesheet" href="styles.css?v=20260220bi" />
 </head>
 <body>
   <div id="app">
@@ -159,6 +159,10 @@
         </div>
         <nav class="menu" id="menuList"></nav>
         <div class="sidebar-footer">
+          <button class="support-link" id="supportBtn">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3a9 9 0 0 0-9 9v3a3 3 0 0 0 3 3h1v-6H6a6 6 0 0 1 12 0h-1v6h1a3 3 0 0 0 3-3v-3a9 9 0 0 0-9-9zM10 20a2 2 0 0 0 4 0v-1h-4z"/></svg>
+            <span>Support</span>
+          </button>
           <div class="user">
             <div class="avatar" id="sidebarAvatar">NH</div>
             <div>
@@ -274,6 +278,22 @@
             </div>
             <div class="legend" id="statusLegend"></div>
             <div class="week-timeline" id="userTeamCalendar"></div>
+          </div>
+        </section>
+
+        <section class="page" id="pageSupport" hidden>
+          <div class="page-header">
+            <h3>Support</h3>
+            <p class="muted">Handbuch für deine Rolle.</p>
+          </div>
+          <div class="card support-card">
+            <div class="card-row">
+              <div class="card-title" id="supportTitle">Support-Handbuch</div>
+              <a class="ghost" id="supportDownload" href="#" download>PDF herunterladen</a>
+            </div>
+            <div class="support-frame-wrap">
+              <iframe id="supportFrame" title="Support-Handbuch" loading="lazy"></iframe>
+            </div>
           </div>
         </section>
 
@@ -780,6 +800,6 @@
     </div>
   </div>
 
-  <script src="app.js?v=20260220bh"></script>
+  <script src="app.js?v=20260220bi"></script>
 </body>
 </html>

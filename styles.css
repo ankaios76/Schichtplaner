@@ -235,6 +235,29 @@ button.ghost {
   color: #fbeff4;
 }
 
+.support-link {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.35);
+  background: rgba(255, 255, 255, 0.12);
+  color: #fff;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.support-link svg {
+  width: 18px;
+  height: 18px;
+  fill: currentColor;
+}
+
+.support-link:hover {
+  background: rgba(255, 255, 255, 0.22);
+}
+
 .logout {
   width: 100%;
   background: rgba(255, 255, 255, 0.12);
@@ -409,6 +432,18 @@ button.ghost {
   background-size: cover;
   background-position: center;
   background-repeat: no-repeat;
+}
+
+.support-card iframe {
+  width: 100%;
+  height: 70vh;
+  border: 1px solid #e2e6ea;
+  border-radius: 12px;
+  background: #fff;
+}
+
+.support-frame-wrap {
+  margin-top: 12px;
 }
 
 .card-action {

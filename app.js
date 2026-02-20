@@ -49,6 +49,7 @@ const sidebarRole = document.getElementById("sidebarRole");
 const sidebarAvatar = document.getElementById("sidebarAvatar");
 const sidebarCompany = document.getElementById("sidebarCompany");
 const sidebarLogo = document.getElementById("sidebarLogo");
+const supportBtn = document.getElementById("supportBtn");
 const profileName = document.getElementById("profileName");
 const profilePhoto = document.getElementById("profilePhoto");
 const profilePosition = document.getElementById("profilePosition");
@@ -57,6 +58,7 @@ const pageTeam = document.getElementById("pageTeam");
 const pageUser = document.getElementById("pageUser");
 const pageProfile = document.getElementById("pageProfile");
 const pageSwap = document.getElementById("pageSwap");
+const pageSupport = document.getElementById("pageSupport");
 const pageTeamCalendar = document.getElementById("pageTeamCalendar");
 const hierarchyTree = document.getElementById("hierarchyTree");
 const teamList = document.getElementById("teamList");
@@ -110,6 +112,9 @@ const adminAddMember = document.getElementById("adminAddMember");
 const teamPageTitle = document.getElementById("teamPageTitle");
 const teamPageDesc = document.getElementById("teamPageDesc");
 const swapRequestsCard = document.getElementById("swapRequestsCard");
+const supportFrame = document.getElementById("supportFrame");
+const supportTitle = document.getElementById("supportTitle");
+const supportDownload = document.getElementById("supportDownload");
 
 const dayModal = document.getElementById("dayModal");
 const modalDate = document.getElementById("modalDate");
@@ -570,6 +575,7 @@ function setActivePage(pageId) {
   pageUser.hidden = pageId !== "user";
   pageProfile.hidden = pageId !== "profile";
   pageSwap.hidden = pageId !== "swap";
+  if (pageSupport) pageSupport.hidden = pageId !== "support";
   const pageSettings = document.getElementById("pageSettings");
   if (pageSettings) pageSettings.hidden = pageId !== "settings";
   if (pageTeamCalendar) pageTeamCalendar.hidden = pageId !== "team-calendar";
@@ -1416,6 +1422,23 @@ function updateUserProfile() {
   }
 }
 
+function setSupportPdf() {
+  if (!state.user || !supportFrame || !supportDownload) return;
+  const roleMap = {
+    supervisor: "supervisor",
+    admin: "teamleiter",
+    user: "benutzer",
+  };
+  const roleKey = roleMap[state.user.role] || "benutzer";
+  const pdfPath = `docs/onepager-${roleKey}.pdf`;
+  supportFrame.src = pdfPath;
+  supportDownload.href = pdfPath;
+  if (supportTitle) {
+    const label = roleKey === "teamleiter" ? "Teamleiter" : roleKey.charAt(0).toUpperCase() + roleKey.slice(1);
+    supportTitle.textContent = `Support-Handbuch (${label})`;
+  }
+}
+
 let cropImage = null;
 let cropScale = 1;
 let cropOffset = { x: 0, y: 0 };
@@ -2107,6 +2130,7 @@ function handleLogin(event) {
       renderTemplates();
       refreshUserCalendar();
       updateUserProfile();
+      setSupportPdf();
       checkSwapNotice();
 
       if (member.systemRole === "supervisor") {
@@ -2775,6 +2799,12 @@ logoutBtn.addEventListener("click", () => {
   state.user = null;
   resetToLogin();
 });
+
+if (supportBtn) {
+  supportBtn.addEventListener("click", () => {
+    setActivePage("support");
+  });
+}
 
 window.addEventListener("click", (event) => {
   return event;
