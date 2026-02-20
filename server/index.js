@@ -278,9 +278,9 @@ if (BOOTSTRAP_MODE) {
   });
 
   app.post("/api/bootstrap/company", (req, res) => {
-    const { companyName, logo } = req.body || {};
+    const { companyName, logo, accent } = req.body || {};
     if (!companyName) return res.status(400).json({ error: "Missing company name" });
-    writeBootstrap({ companyName, logo: logo || null });
+    writeBootstrap({ companyName, logo: logo || null, accent: accent || null });
     res.json({ ok: true });
   });
 
@@ -362,8 +362,8 @@ if (BOOTSTRAP_MODE) {
         await createSchemaWith("postgres", async (sql) => temp.query(sql));
         if (bootstrap.companyName) {
           await temp.query(
-            "INSERT INTO settings (id, company_name, logo) VALUES (1, $1, $2) ON CONFLICT (id) DO UPDATE SET company_name = EXCLUDED.company_name, logo = EXCLUDED.logo",
-            [bootstrap.companyName, bootstrap.logo]
+            "INSERT INTO settings (id, company_name, logo, accent) VALUES (1, $1, $2, $3) ON CONFLICT (id) DO UPDATE SET company_name = EXCLUDED.company_name, logo = EXCLUDED.logo, accent = EXCLUDED.accent",
+            [bootstrap.companyName, bootstrap.logo, bootstrap.accent || null]
           );
         }
         await temp.end();
@@ -372,8 +372,8 @@ if (BOOTSTRAP_MODE) {
         await createSchemaWith("mysql", async (sql) => temp.query(sql));
         if (bootstrap.companyName) {
           await temp.query(
-            "INSERT INTO settings (id, company_name, logo) VALUES (1, ?, ?) ON DUPLICATE KEY UPDATE company_name = VALUES(company_name), logo = VALUES(logo)",
-            [bootstrap.companyName, bootstrap.logo]
+            "INSERT INTO settings (id, company_name, logo, accent) VALUES (1, ?, ?, ?) ON DUPLICATE KEY UPDATE company_name = VALUES(company_name), logo = VALUES(logo), accent = VALUES(accent)",
+            [bootstrap.companyName, bootstrap.logo, bootstrap.accent || null]
           );
         }
         await temp.end();

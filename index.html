@@ -4,19 +4,19 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Schichtplaner</title>
-  <link rel="stylesheet" href="styles.css?v=20260220ae" />
+  <link rel="stylesheet" href="styles.css?v=20260220af" />
 </head>
 <body>
   <div id="app">
     <section class="login" id="setupView" hidden>
-      <div class="login-card">
-        <div class="brand">
-          <div class="brand-mark" id="setupLogo">SP</div>
-          <div>
-            <div class="brand-title" id="setupTitle">Schichtplaner</div>
-            <div class="brand-sub">Ersteinrichtung</div>
+        <div class="login-card">
+          <div class="brand">
+            <div class="brand-mark" id="setupLogo">SP</div>
+            <div>
+              <div class="brand-title" id="setupTitle">Schichtplaner</div>
+              <div class="brand-sub">Ersteinrichtung</div>
+            </div>
           </div>
-        </div>
         <h1>Ersteinrichtung</h1>
         <p class="muted">Bitte Firmenname angeben. Optional Logo hochladen.</p>
         <label class="field">
@@ -26,6 +26,10 @@
         <label class="field">
           <span>Firmenlogo (optional)</span>
           <input id="companyLogo" type="file" accept="image/*" />
+        </label>
+        <label class="field">
+          <span>Akzentfarbe</span>
+          <input id="companyAccent" type="color" />
         </label>
         <div class="hint error" id="setupError" hidden>Bitte Firmenname eingeben.</div>
         <button class="primary" id="setupBtn">Weiter</button>
@@ -359,6 +363,15 @@
               </div>
               <div class="muted">Hinweise: Entfernen überschreibt den berechneten Feiertag.</div>
               <div class="template-grid" id="holidayList"></div>
+            </div>
+
+            <div class="card">
+              <div class="card-title">Berechnete Feiertage</div>
+              <label class="field">
+                <span>Bundesland</span>
+                <select id="holidayViewState"></select>
+              </label>
+              <div class="template-grid" id="holidayComputedList"></div>
             </div>
           </div>
         </section>
@@ -700,6 +713,6 @@
     </div>
   </div>
 
-  <script src="app.js?v=20260220ae"></script>
+  <script src="app.js?v=20260220af"></script>
 </body>
 </html>

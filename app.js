@@ -11,6 +11,7 @@ const setupBtn = document.getElementById("setupBtn");
 const setupError = document.getElementById("setupError");
 const companyName = document.getElementById("companyName");
 const companyLogo = document.getElementById("companyLogo");
+const companyAccent = document.getElementById("companyAccent");
 const dbSetupView = document.getElementById("dbSetupView");
 const dbSetupBtn = document.getElementById("dbSetupBtn");
 const dbSetupError = document.getElementById("dbSetupError");
@@ -167,6 +168,8 @@ const holidayName = document.getElementById("holidayName");
 const holidayAdd = document.getElementById("holidayAdd");
 const holidayRemove = document.getElementById("holidayRemove");
 const holidayList = document.getElementById("holidayList");
+const holidayViewState = document.getElementById("holidayViewState");
+const holidayComputedList = document.getElementById("holidayComputedList");
 const teamModal = document.getElementById("teamModal");
 const closeTeamModal = document.getElementById("closeTeamModal");
 const cancelTeam = document.getElementById("cancelTeam");
@@ -607,6 +610,22 @@ function renderHolidayOverrides() {
         )
         .join("")
     : `<div class="muted">Keine Korrekturen.</div>`;
+}
+
+function renderComputedHolidays() {
+  if (!holidayComputedList) return;
+  const state = holidayViewState ? holidayViewState.value : "BUND";
+  const year = new Date().getFullYear();
+  const map = holidayMapForYear(year)[state] || {};
+  const entries = Object.entries(map).sort(([a], [b]) => (a < b ? -1 : 1));
+  holidayComputedList.innerHTML = entries.length
+    ? entries
+        .map(
+          ([date, name]) =>
+            `<div class="template-day"><strong>${date}</strong><div class="muted">${name || "Feiertag"}</div></div>`
+        )
+        .join("")
+    : `<div class="muted">Keine Feiertage gefunden.</div>`;
 }
 
 async function saveSettingsWithLogo(logoData) {
@@ -1800,6 +1819,11 @@ function handleLogin(event) {
           state.settings.accent || getComputedStyle(document.documentElement).getPropertyValue("--accent").trim() || "#8b0f3a";
         holidayState.innerHTML = stateOptions.map((opt) => `<option value="${opt.code}">${opt.label}</option>`).join("");
         holidayState.value = "NW";
+        if (holidayViewState) {
+          holidayViewState.innerHTML = stateOptions.map((opt) => `<option value="${opt.code}">${opt.label}</option>`).join("");
+          holidayViewState.value = "NW";
+          renderComputedHolidays();
+        }
         renderHolidayOverrides();
       }
       renderAdminDashboard();
@@ -1840,6 +1864,7 @@ async function initSetup() {
     return;
   }
   holidayOverrides = settings.holidayOverrides || {};
+  if (companyAccent && settings.accent) companyAccent.value = settings.accent;
   setCompanyBranding(settings);
   if (!settings?.hasSupervisor) {
     supervisorSetupView.hidden = false;
@@ -1876,11 +1901,12 @@ setupBtn.addEventListener("click", async () => {
       reader.readAsDataURL(companyLogo.files[0]);
     });
   }
+  const accent = companyAccent ? companyAccent.value : null;
 
   try {
     await apiFetch("/api/bootstrap/company", {
       method: "POST",
-      body: JSON.stringify({ companyName: name, logo: logoData }),
+      body: JSON.stringify({ companyName: name, logo: logoData, accent }),
     });
     setupView.hidden = true;
     dbSetupView.hidden = false;
@@ -1985,6 +2011,10 @@ if (settingsSave) {
 
 if (holidayState) {
   holidayState.addEventListener("change", renderHolidayOverrides);
+}
+
+if (holidayViewState) {
+  holidayViewState.addEventListener("change", renderComputedHolidays);
 }
 
 if (holidayAdd) {
