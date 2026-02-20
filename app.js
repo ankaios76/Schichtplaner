@@ -46,6 +46,8 @@ const todayText = document.getElementById("todayText");
 const sidebarName = document.getElementById("sidebarName");
 const sidebarRole = document.getElementById("sidebarRole");
 const sidebarAvatar = document.getElementById("sidebarAvatar");
+const sidebarCompany = document.getElementById("sidebarCompany");
+const sidebarLogo = document.getElementById("sidebarLogo");
 const profileName = document.getElementById("profileName");
 const profilePhoto = document.getElementById("profilePhoto");
 const profilePosition = document.getElementById("profilePosition");
@@ -246,9 +248,10 @@ function setCompanyBranding(settings) {
     setupTitle.textContent = settings.companyName;
     supervisorSetupTitle.textContent = settings.companyName;
     if (dbSetupTitle) dbSetupTitle.textContent = settings.companyName;
+    if (sidebarCompany) sidebarCompany.textContent = settings.companyName;
   }
   if (settings?.logo) {
-    [loginLogo, setupLogo, supervisorSetupLogo, dbSetupLogo].forEach((el) => {
+    [loginLogo, setupLogo, supervisorSetupLogo, dbSetupLogo, sidebarLogo].forEach((el) => {
       if (!el) return;
       el.style.backgroundImage = `url(${settings.logo})`;
       el.textContent = "";
