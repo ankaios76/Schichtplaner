@@ -1391,9 +1391,10 @@ function renderUserDashboard() {
           (s) => s.userId === member.id
         );
         const segments = entries.length ? entries[0].segments : [];
+        const hasWork = segments.length > 0;
         const totalMinutes = calculateDayTotal(segments);
-        const status = entries.length ? entries[0].status || "Support" : "Keine";
-        const timeLabel = segments.length ? `${formatSegments(segments)} (${formatHours(totalMinutes)})` : "–";
+        const status = hasWork ? entries[0].status || "Support" : "Keine";
+        const timeLabel = hasWork ? `${formatSegments(segments)} (${formatHours(totalMinutes)})` : "Keine Arbeitszeit";
         const holiday = getHoliday(date, member.state);
         const holidayLabel = holiday ? ` · Feiertag: ${holiday}` : "";
         row.textContent = `${member.name}: ${timeLabel} · ${status}${holidayLabel}`;
