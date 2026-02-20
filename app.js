@@ -313,6 +313,13 @@ function formatDate(date) {
   });
 }
 
+function formatDateShort(value) {
+  if (!value) return "";
+  const date = typeof value === "string" ? new Date(value) : value;
+  if (Number.isNaN(date.getTime())) return String(value);
+  return date.toLocaleDateString("de-DE", { day: "2-digit", month: "2-digit", year: "numeric" });
+}
+
 function dateKey(date) {
   const year = date.getFullYear();
   const month = String(date.getMonth() + 1).padStart(2, "0");
@@ -606,7 +613,7 @@ function renderHolidayOverrides() {
     ? entries
         .map(
           ([date, name]) =>
-            `<div class="template-day"><strong>${date}</strong><div class="muted">${name || "entfernt"}</div></div>`
+            `<div class="template-day"><strong>${formatDateShort(date)}</strong><div class="muted">${name || "entfernt"}</div></div>`
         )
         .join("")
     : `<div class="muted">Keine Korrekturen.</div>`;
@@ -622,7 +629,7 @@ function renderComputedHolidays() {
     ? entries
         .map(
           ([date, name]) =>
-            `<div class="template-day"><strong>${date}</strong><div class="muted">${name || "Feiertag"}</div></div>`
+            `<div class="template-day"><strong>${formatDateShort(date)}</strong><div class="muted">${name || "Feiertag"}</div></div>`
         )
         .join("")
     : `<div class="muted">Keine Feiertage gefunden.</div>`;
