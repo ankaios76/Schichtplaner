@@ -11,6 +11,20 @@ const setupBtn = document.getElementById("setupBtn");
 const setupError = document.getElementById("setupError");
 const companyName = document.getElementById("companyName");
 const companyLogo = document.getElementById("companyLogo");
+const dbSetupView = document.getElementById("dbSetupView");
+const dbSetupBtn = document.getElementById("dbSetupBtn");
+const dbSetupError = document.getElementById("dbSetupError");
+const dbSetupResult = document.getElementById("dbSetupResult");
+const dbSetupLogo = document.getElementById("dbSetupLogo");
+const dbSetupTitle = document.getElementById("dbSetupTitle");
+const dbClient = document.getElementById("dbClient");
+const dbMode = document.getElementById("dbMode");
+const dbExternalFields = document.getElementById("dbExternalFields");
+const dbHost = document.getElementById("dbHost");
+const dbPort = document.getElementById("dbPort");
+const dbName = document.getElementById("dbName");
+const dbUser = document.getElementById("dbUser");
+const dbPass = document.getElementById("dbPass");
 const supervisorSetupBtn = document.getElementById("supervisorSetupBtn");
 const supervisorSetupError = document.getElementById("supervisorSetupError");
 const supervisorName = document.getElementById("supervisorName");
@@ -50,12 +64,12 @@ const avatarUpload = document.getElementById("avatarUpload");
 const removeAvatarBtn = document.getElementById("removeAvatar");
 const templateGrid = document.getElementById("templateGrid");
 const applyTemplateBtn = document.getElementById("applyTemplate");
+const clearMonthBtn = document.getElementById("clearMonth");
 const templateNotice = document.getElementById("templateNotice");
 const calendarGrid = document.getElementById("calendarGrid");
 const monthLabel = document.getElementById("monthLabel");
 const prevMonthBtn = document.getElementById("prevMonth");
 const nextMonthBtn = document.getElementById("nextMonth");
-const clearMonthBtn = document.getElementById("clearMonth");
 const weeklyTotal = document.getElementById("weeklyTotal");
 const defaultDashboard = document.getElementById("defaultDashboard");
 const pageAdminDashboard = document.getElementById("pageAdminDashboard");
@@ -184,6 +198,7 @@ const weekdayLabels = ["Mo", "Di", "Mi", "Do", "Fr", "Sa", "So"];
 function resetToLogin() {
   loginView.hidden = false;
   setupView.hidden = true;
+  dbSetupView.hidden = true;
   supervisorSetupView.hidden = true;
   appView.hidden = true;
   if (dayModal) dayModal.hidden = true;
@@ -196,32 +211,21 @@ function resetToLogin() {
   loginError.hidden = true;
 }
 
-resetToLogin();
-
 function setCompanyBranding(settings) {
   if (settings?.companyName) {
     loginCompany.textContent = settings.companyName;
     setupTitle.textContent = settings.companyName;
     supervisorSetupTitle.textContent = settings.companyName;
+    if (dbSetupTitle) dbSetupTitle.textContent = settings.companyName;
   }
   if (settings?.logo) {
-    [loginLogo, setupLogo, supervisorSetupLogo].forEach((el) => {
+    [loginLogo, setupLogo, supervisorSetupLogo, dbSetupLogo].forEach((el) => {
       if (!el) return;
       el.style.backgroundImage = `url(${settings.logo})`;
       el.textContent = "";
     });
   }
 }
-
-window.addEventListener("error", () => {
-  loginError.textContent = "Ein Fehler ist aufgetreten. Bitte Seite neu laden.";
-  loginError.hidden = false;
-});
-
-window.addEventListener("unhandledrejection", () => {
-  loginError.textContent = "Ein Fehler ist aufgetreten. Bitte Seite neu laden.";
-  loginError.hidden = false;
-});
 
 async function apiFetch(path, options = {}) {
   const response = await fetch(`${API_BASE}${path}`, {
@@ -314,16 +318,6 @@ function renderStateOptions() {
     .join("");
 }
 
-renderStateOptions();
-
-function ensureDefaultStateForUser(member) {
-  if (!member) return "NW";
-  if (!member.state) {
-    member.state = "NW";
-  }
-  return member.state;
-}
-
 function easterSunday(year) {
   const a = year % 19;
   const b = Math.floor(year / 100);
@@ -381,9 +375,8 @@ function holidayMapForYear(year) {
   addHoliday(new Date(year, 10, 1), "Allerheiligen", ["BW", "BY", "NW", "RP", "SL"]);
   addHoliday(new Date(year, 8, 20), "Weltkindertag", ["TH"]);
 
-  // Buß- und Bettag (Wednesday before Nov 23) in Sachsen
   const nov23 = new Date(year, 10, 23);
-  const dayOfWeek = nov23.getDay(); // 0 Sunday..6 Saturday
+  const dayOfWeek = nov23.getDay();
   const offset = (dayOfWeek + 4) % 7;
   const buss = new Date(year, 10, 23 - offset);
   addHoliday(buss, "Buß- und Bettag", ["SN"]);
@@ -658,7 +651,7 @@ function renderCalendar() {
   weekdayLabels.forEach((label) => {
     const header = document.createElement("div");
     header.className = "calendar-day weekday";
-    header.innerHTML = `<div class="date">${label}</div>`;
+    header.innerHTML = `<div class=\"date\">${label}</div>`;
     calendarGrid.appendChild(header);
   });
 
@@ -669,7 +662,7 @@ function renderCalendar() {
     const empty = document.createElement("div");
     empty.className = "calendar-day";
     empty.style.opacity = "0.4";
-    empty.innerHTML = `<div class="date"></div>`;
+    empty.innerHTML = `<div class=\"date\"></div>`;
     calendarGrid.appendChild(empty);
   }
 
@@ -683,8 +676,8 @@ function renderCalendar() {
     cell.className = "calendar-day";
     if (holiday) cell.classList.add("holiday");
     cell.innerHTML = `
-      <div class="date">${day}</div>
-      <div class="hours">${minutes > 0 ? formatHours(minutes) : "-"}</div>
+      <div class=\"date\">${day}</div>
+      <div class=\"hours\">${minutes > 0 ? formatHours(minutes) : "-"}</div>
     `;
     if (holiday) {
       const label = document.createElement("div");
@@ -781,9 +774,9 @@ function renderSegments() {
     const row = document.createElement("div");
     row.className = "segment";
     row.innerHTML = `
-      <input type="time" value="${seg.start}" data-index="${index}" data-field="start" />
-      <input type="time" value="${seg.end}" data-index="${index}" data-field="end" />
-      <button class="ghost" data-remove="${index}">Entfernen</button>
+      <input type=\"time\" value=\"${seg.start}\" data-index=\"${index}\" data-field=\"start\" />
+      <input type=\"time\" value=\"${seg.end}\" data-index=\"${index}\" data-field=\"end\" />
+      <button class=\"ghost\" data-remove=\"${index}\">Entfernen</button>
     `;
     segmentsContainer.appendChild(row);
   });
@@ -938,7 +931,7 @@ function openHierarchyModal({ mode, parentId = null, nodeId = null }) {
   if (mode === "edit") {
     const found = findNode(state.hierarchy, nodeId);
     if (!found) return;
-    hierarchyType.innerHTML = `<option value="${found.node.type}">${typeLabels[found.node.type]}</option>`;
+    hierarchyType.innerHTML = `<option value=\"${found.node.type}\">${typeLabels[found.node.type]}</option>`;
     hierarchyType.value = found.node.type;
     hierarchyType.disabled = true;
     hierarchyName.value = found.node.name;
@@ -947,7 +940,7 @@ function openHierarchyModal({ mode, parentId = null, nodeId = null }) {
       ? childTypes[findNode(state.hierarchy, parentId).node.type] || []
       : ["company"];
     hierarchyType.innerHTML = allowedTypes
-      .map((type) => `<option value="${type}">${typeLabels[type]}</option>`)
+      .map((type) => `<option value=\"${type}\">${typeLabels[type]}</option>`)
       .join("");
     hierarchyType.disabled = false;
     hierarchyName.value = "";
@@ -1183,7 +1176,6 @@ function renderAdminDashboard() {
   if (!state.user || state.user.role !== "admin") return;
   const teamId = String(state.user.team || "unassigned");
 
-  // Team members
   const members = state.members.filter((m) => String(m.team || "unassigned") === teamId);
   adminTeamList.innerHTML = "";
   members.forEach((member) => {
@@ -1204,7 +1196,6 @@ function renderAdminDashboard() {
     adminTeamList.appendChild(card);
   });
 
-  // Swap requests
   const swaps = state.swaps.filter((swap) => swap.team === teamId);
   adminSwapList.innerHTML = "";
   swaps.forEach((swap) => {
@@ -1220,7 +1211,6 @@ function renderAdminDashboard() {
     adminSwapList.appendChild(item);
   });
 
-  // Sick list (status = abwesend)
   const sick = members.filter((m) => m.status === "abwesend");
   adminSickList.innerHTML = "";
   sick.forEach((member) => {
@@ -1368,6 +1358,14 @@ async function loadData() {
   renderAdminDashboard();
 }
 
+function ensureDefaultStateForUser(member) {
+  if (!member) return "NW";
+  if (!member.state) {
+    member.state = "NW";
+  }
+  return member.state;
+}
+
 function handleLogin(event) {
   if (event) event.preventDefault();
   const username = loginUser.value.trim();
@@ -1432,27 +1430,40 @@ function handleLogin(event) {
     });
 }
 
-window.handleLogin = handleLogin;
-
 async function initSetup() {
   try {
-    const settings = await apiFetch("/api/settings");
-    if (!settings?.companyName) {
-      setupView.hidden = false;
+    const bootstrap = await apiFetch("/api/bootstrap/status");
+    if (bootstrap?.needsDbConfig) {
       loginView.hidden = true;
+      setupView.hidden = true;
+      dbSetupView.hidden = true;
+      const branding = { companyName: bootstrap.companyName, logo: bootstrap.logo };
+      setCompanyBranding(branding);
+      if (!bootstrap.companyName) {
+        setupView.hidden = false;
+        if (bootstrap.companyName) companyName.value = bootstrap.companyName;
+      } else {
+        dbSetupView.hidden = false;
+      }
       return;
     }
-    setCompanyBranding(settings);
-    if (!settings?.hasSupervisor) {
-      supervisorSetupView.hidden = false;
-      loginView.hidden = true;
-      return;
-    }
-    loginView.hidden = false;
-  } catch (err) {
+  } catch {
+    // Not in bootstrap mode
+  }
+
+  const settings = await apiFetch("/api/settings");
+  if (!settings?.companyName) {
     setupView.hidden = false;
     loginView.hidden = true;
+    return;
   }
+  setCompanyBranding(settings);
+  if (!settings?.hasSupervisor) {
+    supervisorSetupView.hidden = false;
+    loginView.hidden = true;
+    return;
+  }
+  loginView.hidden = false;
 }
 
 loginForm.addEventListener("submit", (event) => {
@@ -1482,14 +1493,58 @@ setupBtn.addEventListener("click", async () => {
       reader.readAsDataURL(companyLogo.files[0]);
     });
   }
-  await apiFetch("/api/settings", {
-    method: "POST",
-    body: JSON.stringify({ companyName: name, logo: logoData }),
-  });
-  const settings = await apiFetch("/api/settings");
-  setCompanyBranding(settings);
-  setupView.hidden = true;
-  supervisorSetupView.hidden = false;
+
+  try {
+    await apiFetch("/api/bootstrap/company", {
+      method: "POST",
+      body: JSON.stringify({ companyName: name, logo: logoData }),
+    });
+    setupView.hidden = true;
+    dbSetupView.hidden = false;
+  } catch (err) {
+    setupError.textContent = "Setup fehlgeschlagen.";
+    setupError.hidden = false;
+  }
+});
+
+function updateDbFields() {
+  const isExternal = dbMode.value === "external";
+  dbExternalFields.hidden = !isExternal;
+}
+
+dbMode.addEventListener("change", updateDbFields);
+dbClient.addEventListener("change", updateDbFields);
+updateDbFields();
+
+dbSetupBtn.addEventListener("click", async () => {
+  dbSetupError.hidden = true;
+  dbSetupResult.hidden = true;
+
+  const payload = { dbClient: dbClient.value, mode: dbMode.value };
+  if (payload.mode === "external") {
+    payload.dbHost = dbHost.value.trim();
+    payload.dbPort = dbPort.value.trim();
+    payload.dbName = dbName.value.trim();
+    payload.dbUser = dbUser.value.trim();
+    payload.dbPassword = dbPass.value;
+    if (!payload.dbHost || !payload.dbPort || !payload.dbName || !payload.dbUser || !payload.dbPassword) {
+      dbSetupError.hidden = false;
+      return;
+    }
+  }
+
+  try {
+    const result = await apiFetch("/api/bootstrap/config", {
+      method: "POST",
+      body: JSON.stringify(payload),
+    });
+    dbSetupResult.textContent = `DB eingerichtet. Benutzer: ${result.dbUser}, Passwort: ${result.dbPassword}, DB: ${result.dbName}, Host: ${result.dbHost}:${result.dbPort}. Seite wird neu geladen.`;
+    dbSetupResult.hidden = false;
+    setTimeout(() => location.reload(), 1500);
+  } catch (err) {
+    dbSetupError.textContent = "Datenbank-Setup fehlgeschlagen.";
+    dbSetupError.hidden = false;
+  }
 });
 
 supervisorSetupBtn.addEventListener("click", async () => {
@@ -1512,6 +1567,7 @@ supervisorSetupBtn.addEventListener("click", async () => {
   supervisorSetupView.hidden = true;
   loginView.hidden = false;
 });
+
 weeklyTargetInput.addEventListener("input", updateWeeklyTotal);
 
 addRootBtn.addEventListener("click", () => {
@@ -1734,4 +1790,5 @@ window.addEventListener("click", (event) => {
 
 renderStateOptions();
 supervisorState.innerHTML = memberState.innerHTML;
+resetToLogin();
 initSetup();

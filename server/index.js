@@ -4,18 +4,25 @@ import dotenv from "dotenv";
 import bcrypt from "bcryptjs";
 import { Pool as PgPool } from "pg";
 import mysql from "mysql2/promise";
+import fs from "fs";
+import path from "path";
+import crypto from "crypto";
+import { execSync } from "child_process";
 
 dotenv.config({ path: process.env.ENV_FILE || ".env.local" });
 
 const app = express();
 const PORT = process.env.PORT || 3000;
+const SERVER_DIR = path.resolve(path.dirname(new URL(import.meta.url).pathname));
+const BOOTSTRAP_FILE = path.join(SERVER_DIR, "bootstrap.json");
 
-const DB_CLIENT = (process.env.DB_CLIENT || "postgres").toLowerCase();
+const DB_CLIENT = (process.env.DB_CLIENT || "").toLowerCase();
 const DB_HOST = process.env.DB_HOST || "127.0.0.1";
 const DB_PORT = Number(process.env.DB_PORT || (DB_CLIENT === "mysql" ? 3306 : 5432));
 const DB_USER = process.env.DB_USER || "sp_pln";
 const DB_PASSWORD = process.env.DB_PASSWORD || "";
 const DB_NAME = process.env.DB_NAME || "sp_pln";
+const BOOTSTRAP_MODE = process.env.BOOTSTRAP === "1" || !DB_CLIENT;
 
 app.use(cors());
 app.use(express.json({ limit: "4mb" }));
@@ -26,6 +33,113 @@ function toPg(sql, params = []) {
   let i = 0;
   const text = sql.replace(/\?/g, () => `$${++i}`);
   return { text, values: params };
+}
+
+async function createSchemaWith(client, execFn) {
+  if (client === "postgres") {
+    await execFn(`
+      CREATE TABLE IF NOT EXISTS users (
+        id SERIAL PRIMARY KEY,
+        name TEXT NOT NULL,
+        username TEXT NOT NULL UNIQUE,
+        password_hash TEXT NOT NULL,
+        system_role TEXT NOT NULL,
+        team TEXT NOT NULL,
+        status TEXT NOT NULL,
+        role_title TEXT NOT NULL,
+        email TEXT,
+        phone TEXT,
+        state TEXT
+      );
+      CREATE TABLE IF NOT EXISTS hierarchy_nodes (
+        id SERIAL PRIMARY KEY,
+        parent_id INTEGER,
+        type TEXT NOT NULL,
+        name TEXT NOT NULL,
+        sort_order INTEGER NOT NULL DEFAULT 0
+      );
+      CREATE TABLE IF NOT EXISTS swaps (
+        id SERIAL PRIMARY KEY,
+        requester TEXT NOT NULL,
+        team TEXT NOT NULL,
+        date DATE NOT NULL,
+        reason TEXT,
+        status TEXT NOT NULL,
+        created_at TIMESTAMP NOT NULL
+      );
+      CREATE TABLE IF NOT EXISTS shifts (
+        id SERIAL PRIMARY KEY,
+        user_id INTEGER NOT NULL,
+        date DATE NOT NULL,
+        segments_json TEXT NOT NULL,
+        status TEXT,
+        UNIQUE(user_id, date)
+      );
+      CREATE TABLE IF NOT EXISTS settings (
+        id INTEGER PRIMARY KEY,
+        company_name TEXT,
+        logo TEXT
+      );
+    `);
+    await execFn(
+      "INSERT INTO settings (id, company_name, logo) VALUES (1, NULL, NULL) ON CONFLICT (id) DO NOTHING"
+    );
+    return;
+  }
+
+  await execFn(`
+    CREATE TABLE IF NOT EXISTS users (
+      id INT AUTO_INCREMENT PRIMARY KEY,
+      name VARCHAR(255) NOT NULL,
+      username VARCHAR(255) NOT NULL UNIQUE,
+      password_hash TEXT NOT NULL,
+      system_role VARCHAR(50) NOT NULL,
+      team VARCHAR(255) NOT NULL,
+      status VARCHAR(50) NOT NULL,
+      role_title VARCHAR(255) NOT NULL,
+      email VARCHAR(255),
+      phone VARCHAR(255),
+      state VARCHAR(50)
+    );
+  `);
+  await execFn(`
+    CREATE TABLE IF NOT EXISTS hierarchy_nodes (
+      id INT AUTO_INCREMENT PRIMARY KEY,
+      parent_id INT NULL,
+      type VARCHAR(50) NOT NULL,
+      name VARCHAR(255) NOT NULL,
+      sort_order INT NOT NULL DEFAULT 0
+    );
+  `);
+  await execFn(`
+    CREATE TABLE IF NOT EXISTS swaps (
+      id INT AUTO_INCREMENT PRIMARY KEY,
+      requester VARCHAR(255) NOT NULL,
+      team VARCHAR(255) NOT NULL,
+      date DATE NOT NULL,
+      reason TEXT,
+      status VARCHAR(50) NOT NULL,
+      created_at DATETIME NOT NULL
+    );
+  `);
+  await execFn(`
+    CREATE TABLE IF NOT EXISTS shifts (
+      id INT AUTO_INCREMENT PRIMARY KEY,
+      user_id INT NOT NULL,
+      date DATE NOT NULL,
+      segments_json TEXT NOT NULL,
+      status VARCHAR(50),
+      UNIQUE KEY uniq_user_date (user_id, date)
+    );
+  `);
+  await execFn(`
+    CREATE TABLE IF NOT EXISTS settings (
+      id INT PRIMARY KEY,
+      company_name VARCHAR(255),
+      logo LONGTEXT
+    );
+  `);
+  await execFn("INSERT IGNORE INTO settings (id, company_name, logo) VALUES (1, NULL, NULL)");
 }
 
 async function initDb() {
@@ -73,111 +187,7 @@ async function execute(sql, params = []) {
 }
 
 async function createSchema() {
-  if (DB_CLIENT === "postgres") {
-    await execute(`
-      CREATE TABLE IF NOT EXISTS users (
-        id SERIAL PRIMARY KEY,
-        name TEXT NOT NULL,
-        username TEXT NOT NULL UNIQUE,
-        password_hash TEXT NOT NULL,
-        system_role TEXT NOT NULL,
-        team TEXT NOT NULL,
-        status TEXT NOT NULL,
-        role_title TEXT NOT NULL,
-        email TEXT,
-        phone TEXT,
-        state TEXT
-      );
-      CREATE TABLE IF NOT EXISTS hierarchy_nodes (
-        id SERIAL PRIMARY KEY,
-        parent_id INTEGER,
-        type TEXT NOT NULL,
-        name TEXT NOT NULL,
-        sort_order INTEGER NOT NULL DEFAULT 0
-      );
-      CREATE TABLE IF NOT EXISTS swaps (
-        id SERIAL PRIMARY KEY,
-        requester TEXT NOT NULL,
-        team TEXT NOT NULL,
-        date DATE NOT NULL,
-        reason TEXT,
-        status TEXT NOT NULL,
-        created_at TIMESTAMP NOT NULL
-      );
-      CREATE TABLE IF NOT EXISTS shifts (
-        id SERIAL PRIMARY KEY,
-        user_id INTEGER NOT NULL,
-        date DATE NOT NULL,
-        segments_json TEXT NOT NULL,
-        status TEXT,
-        UNIQUE(user_id, date)
-      );
-      CREATE TABLE IF NOT EXISTS settings (
-        id INTEGER PRIMARY KEY,
-        company_name TEXT,
-        logo TEXT
-      );
-    `);
-  } else {
-    await execute(`
-      CREATE TABLE IF NOT EXISTS users (
-        id INT AUTO_INCREMENT PRIMARY KEY,
-        name VARCHAR(255) NOT NULL,
-        username VARCHAR(255) NOT NULL UNIQUE,
-        password_hash TEXT NOT NULL,
-        system_role VARCHAR(50) NOT NULL,
-        team VARCHAR(255) NOT NULL,
-        status VARCHAR(50) NOT NULL,
-        role_title VARCHAR(255) NOT NULL,
-        email VARCHAR(255),
-        phone VARCHAR(255),
-        state VARCHAR(50)
-      );
-    `);
-    await execute(`
-      CREATE TABLE IF NOT EXISTS hierarchy_nodes (
-        id INT AUTO_INCREMENT PRIMARY KEY,
-        parent_id INT NULL,
-        type VARCHAR(50) NOT NULL,
-        name VARCHAR(255) NOT NULL,
-        sort_order INT NOT NULL DEFAULT 0
-      );
-    `);
-    await execute(`
-      CREATE TABLE IF NOT EXISTS swaps (
-        id INT AUTO_INCREMENT PRIMARY KEY,
-        requester VARCHAR(255) NOT NULL,
-        team VARCHAR(255) NOT NULL,
-        date DATE NOT NULL,
-        reason TEXT,
-        status VARCHAR(50) NOT NULL,
-        created_at DATETIME NOT NULL
-      );
-    `);
-    await execute(`
-      CREATE TABLE IF NOT EXISTS shifts (
-        id INT AUTO_INCREMENT PRIMARY KEY,
-        user_id INT NOT NULL,
-        date DATE NOT NULL,
-        segments_json TEXT NOT NULL,
-        status VARCHAR(50),
-        UNIQUE KEY uniq_user_date (user_id, date)
-      );
-    `);
-    await execute(`
-      CREATE TABLE IF NOT EXISTS settings (
-        id INT PRIMARY KEY,
-        company_name VARCHAR(255),
-        logo LONGTEXT
-      );
-    `);
-  }
-
-  if (DB_CLIENT === "postgres") {
-    await execute("INSERT INTO settings (id, company_name, logo) VALUES (1, NULL, NULL) ON CONFLICT (id) DO NOTHING");
-  } else {
-    await execute("INSERT IGNORE INTO settings (id, company_name, logo) VALUES (1, NULL, NULL)");
-  }
+  await createSchemaWith(DB_CLIENT, async (sql) => execute(sql));
 }
 
 async function hasSupervisor() {
@@ -205,6 +215,135 @@ function buildTree(rows) {
   };
   sortNodes(roots);
   return roots;
+}
+
+function randomPassword() {
+  return crypto.randomBytes(12).toString("base64url");
+}
+
+function sanitizeIdentifier(value, fallback) {
+  if (!value) return fallback;
+  const clean = value.trim();
+  if (!/^[a-zA-Z0-9_]+$/.test(clean)) return null;
+  return clean;
+}
+
+function writeEnv(config) {
+  const content = `PORT=3000\nDB_CLIENT=${config.client}\nDB_HOST=${config.host}\nDB_PORT=${config.port}\nDB_USER=${config.user}\nDB_PASSWORD=${config.password}\nDB_NAME=${config.name}\n`;
+  fs.writeFileSync(path.join(SERVER_DIR, ".env.local"), content, "utf8");
+}
+
+function readBootstrap() {
+  if (!fs.existsSync(BOOTSTRAP_FILE)) return {};
+  try {
+    return JSON.parse(fs.readFileSync(BOOTSTRAP_FILE, "utf8"));
+  } catch {
+    return {};
+  }
+}
+
+function writeBootstrap(data) {
+  fs.writeFileSync(BOOTSTRAP_FILE, JSON.stringify(data), "utf8");
+}
+
+if (BOOTSTRAP_MODE) {
+  app.get("/api/bootstrap/status", (req, res) => {
+    const data = readBootstrap();
+    res.json({ needsDbConfig: true, companyName: data.companyName || null, logo: data.logo || null });
+  });
+
+  app.post("/api/bootstrap/company", (req, res) => {
+    const { companyName, logo } = req.body || {};
+    if (!companyName) return res.status(400).json({ error: "Missing company name" });
+    writeBootstrap({ companyName, logo: logo || null });
+    res.json({ ok: true });
+  });
+
+  app.post("/api/bootstrap/config", async (req, res) => {
+    const { dbClient, mode, dbHost, dbPort, dbName, dbUser, dbPassword } = req.body || {};
+    if (!dbClient || !mode) return res.status(400).json({ error: "Missing config" });
+
+    let client = dbClient.toLowerCase();
+    let host = dbHost || "127.0.0.1";
+    let port = Number(dbPort || (client === "mysql" ? 3306 : 5432));
+    let name = dbName || "sp_pln";
+    let user = dbUser || "sp_pln";
+    let password = dbPassword || randomPassword();
+
+    try {
+      if (mode !== "local" && mode !== "external") {
+        return res.status(400).json({ error: "Invalid mode" });
+      }
+
+      if (mode === "external") {
+        if (!dbHost || !dbName || !dbUser || !dbPassword) {
+          return res.status(400).json({ error: "Missing external DB fields" });
+        }
+      }
+
+      if (mode === "local") {
+        name = sanitizeIdentifier(name, "sp_pln");
+        user = sanitizeIdentifier(user, "sp_pln");
+        if (!name || !user) {
+          return res.status(400).json({ error: "Invalid DB name or user" });
+        }
+      }
+
+      if (mode === "local") {
+        if (client === "postgres") {
+          execSync(`sudo -u postgres psql -c "CREATE DATABASE ${name};"`, { stdio: "ignore" });
+          execSync(`sudo -u postgres psql -c "CREATE USER ${user} WITH PASSWORD '${password}';"`, { stdio: "ignore" });
+          execSync(`sudo -u postgres psql -c "GRANT ALL PRIVILEGES ON DATABASE ${name} TO ${user};"`, { stdio: "ignore" });
+        } else {
+          execSync(`mysql -uroot -e "CREATE DATABASE IF NOT EXISTS ${name};"`, { stdio: "ignore" });
+          execSync(
+            `mysql -uroot -e "CREATE USER IF NOT EXISTS '${user}'@'%' IDENTIFIED BY '${password}';"`,
+            { stdio: "ignore" }
+          );
+          execSync(`mysql -uroot -e "GRANT ALL PRIVILEGES ON ${name}.* TO '${user}'@'%';"`, { stdio: "ignore" });
+        }
+      }
+
+      writeEnv({ client, host, port, name, user, password });
+
+      const bootstrap = readBootstrap();
+      if (client === "postgres") {
+        const temp = new PgPool({ host, port, user, password, database: name });
+        await createSchemaWith("postgres", async (sql) => temp.query(sql));
+        if (bootstrap.companyName) {
+          await temp.query(
+            "INSERT INTO settings (id, company_name, logo) VALUES (1, $1, $2) ON CONFLICT (id) DO UPDATE SET company_name = EXCLUDED.company_name, logo = EXCLUDED.logo",
+            [bootstrap.companyName, bootstrap.logo]
+          );
+        }
+        await temp.end();
+      } else {
+        const temp = await mysql.createConnection({ host, port, user, password, database: name });
+        await createSchemaWith("mysql", async (sql) => temp.query(sql));
+        if (bootstrap.companyName) {
+          await temp.query(
+            "INSERT INTO settings (id, company_name, logo) VALUES (1, ?, ?) ON DUPLICATE KEY UPDATE company_name = VALUES(company_name), logo = VALUES(logo)",
+            [bootstrap.companyName, bootstrap.logo]
+          );
+        }
+        await temp.end();
+      }
+
+      res.json({ ok: true, dbUser: user, dbPassword: password, dbName: name, dbHost: host, dbPort: port });
+
+      // restart service so it boots with DB config
+      try {
+        execSync("systemctl restart sp-pln.service", { stdio: "ignore" });
+      } catch {}
+    } catch (err) {
+      res.status(500).json({ error: "DB setup failed" });
+    }
+  });
+
+  app.listen(PORT, () => {
+    console.log(`Bootstrap API listening on ${PORT}`);
+  });
+  return;
 }
 
 await initDb();
@@ -278,12 +417,11 @@ app.post("/api/hierarchy", async (req, res) => {
     parentId || null,
   ]);
   const sortOrder = sortRows[0]?.next || 1;
-  const result = await execute(
+  await execute(
     "INSERT INTO hierarchy_nodes (parent_id, type, name, sort_order) VALUES (?, ?, ?, ?)",
     [parentId || null, type, name, sortOrder]
   );
-  const id = result?.insertId || result?.rows?.[0]?.id || result?.lastInsertRowid || null;
-  res.json({ id });
+  res.json({ ok: true });
 });
 
 app.put("/api/hierarchy/:id", async (req, res) => {

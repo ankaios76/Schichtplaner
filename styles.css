@@ -517,6 +517,13 @@ button.ghost {
   border-radius: 10px;
 }
 
+.hint.success {
+  color: #0f5132;
+  background: #e8f7ef;
+  padding: 8px 10px;
+  border-radius: 10px;
+}
+
 .templates {
   display: grid;
   gap: 12px;

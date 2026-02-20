@@ -5,18 +5,13 @@
 sudo apt-get update -y
 sudo apt-get install -y git
 
-git clone git@github.com:ankaios76/Schichtplaner.git
+git clone https://github.com/ankaios76/Schichtplaner.git
 cd Schichtplaner
 sudo bash install.sh
 ```
 
-Der Installer fragt interaktiv:
-- PostgreSQL lokal
-- MySQL lokal
-- PostgreSQL extern
-- MySQL extern
-
-Danach im Browser `http://SERVER_IP/` öffnen und Ersteinrichtung durchführen.
+Der Installer installiert Frontend, Backend sowie PostgreSQL + MySQL lokal.
+Die Datenbank-Konfiguration erfolgt im Browser unter `http://SERVER_IP/` während der Ersteinrichtung.
 
 ## Updates deployen
 ```bash

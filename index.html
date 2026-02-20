@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Schichtplaner</title>
-  <link rel="stylesheet" href="styles.css?v=20260219d" />
+  <link rel="stylesheet" href="styles.css?v=20260220a" />
 </head>
 <body>
   <div id="app">
@@ -29,6 +29,59 @@
         </label>
         <div class="hint error" id="setupError" hidden>Bitte Firmenname eingeben.</div>
         <button class="primary" id="setupBtn">Weiter</button>
+      </div>
+    </section>
+
+    <section class="login" id="dbSetupView" hidden>
+      <div class="login-card">
+        <div class="brand">
+          <div class="brand-mark" id="dbSetupLogo">SP</div>
+          <div>
+            <div class="brand-title" id="dbSetupTitle">Schichtplaner</div>
+            <div class="brand-sub">Datenbank einrichten</div>
+          </div>
+        </div>
+        <h1>Datenbank einrichten</h1>
+        <p class="muted">Wähle Datenbanktyp und Modus. Bei lokal wird alles automatisch angelegt.</p>
+        <label class="field">
+          <span>Datenbanktyp</span>
+          <select id="dbClient">
+            <option value="postgres">PostgreSQL</option>
+            <option value="mysql">MySQL</option>
+          </select>
+        </label>
+        <label class="field">
+          <span>Modus</span>
+          <select id="dbMode">
+            <option value="local">Lokal (empfohlen)</option>
+            <option value="external">Externer Server</option>
+          </select>
+        </label>
+        <div id="dbExternalFields" hidden>
+          <label class="field">
+            <span>DB Host *</span>
+            <input id="dbHost" type="text" placeholder="z. B. 10.0.0.5" />
+          </label>
+          <label class="field">
+            <span>DB Port *</span>
+            <input id="dbPort" type="text" placeholder="5432 oder 3306" />
+          </label>
+          <label class="field">
+            <span>DB Name *</span>
+            <input id="dbName" type="text" placeholder="sp_pln" />
+          </label>
+          <label class="field">
+            <span>DB Benutzer *</span>
+            <input id="dbUser" type="text" placeholder="sp_pln" />
+          </label>
+          <label class="field">
+            <span>DB Passwort *</span>
+            <input id="dbPass" type="password" placeholder="••••••••" />
+          </label>
+        </div>
+        <div class="hint error" id="dbSetupError" hidden>Bitte alle Pflichtfelder ausfüllen.</div>
+        <div class="hint success" id="dbSetupResult" hidden></div>
+        <button class="primary" id="dbSetupBtn">Datenbank einrichten</button>
       </div>
     </section>
 
@@ -553,6 +606,6 @@
     </div>
   </div>
 
-  <script src="app.js?v=20260219d"></script>
+  <script src="app.js?v=20260220a"></script>
 </body>
 </html>
