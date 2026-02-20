@@ -380,21 +380,22 @@ const statusColors = {
 };
 
 const defaultActivityOptions = [
-  "Support",
-  "Projekt",
-  "Betriebsrat",
-  "Urlaub",
-  "Urlaub halber Tag",
-  "Krank",
-  "Rufbereitschaft Voice/Daten",
-  "Rufbereitschaft Fraud",
+  { name: "Support", color: statusColors.Support },
+  { name: "Projekt", color: statusColors.Projekt },
+  { name: "Betriebsrat", color: statusColors.Betriebsrat },
+  { name: "Urlaub", color: statusColors.Urlaub },
+  { name: "Urlaub halber Tag", color: statusColors["Urlaub halber Tag"] },
+  { name: "Krank", color: statusColors.Krank },
+  { name: "Rufbereitschaft Voice/Daten", color: statusColors["Rufbereitschaft Voice/Daten"] },
+  { name: "Rufbereitschaft Fraud", color: statusColors["Rufbereitschaft Fraud"] },
 ];
 
 let activityOptions = [...defaultActivityOptions];
 
 function statusColor(status, hasSegments) {
   if (!hasSegments) return statusColors.Keine;
-  return statusColors[status] || statusColors.Support;
+  const found = activityOptions.find((opt) => opt.name === status);
+  return (found && found.color) || statusColors[status] || statusColors.Support;
 }
 
 const stateOptions = [
@@ -667,8 +668,18 @@ function renderActivityOptions() {
   if (!activityList) return;
   activityList.innerHTML = activityOptions
     .map(
-      (name) =>
-        `<div class="template-day"><strong>${name}</strong><button class="ghost" data-remove="${name}">Entfernen</button></div>`
+      (opt, index) =>
+        `<div class="template-day">
+          <div class="legend-item">
+            <span class="legend-swatch" style="background:${opt.color || statusColors.Support}"></span>
+            <strong>${opt.name}</strong>
+          </div>
+          <label class="field">
+            <span>Farbe</span>
+            <input type="color" data-color="${index}" value="${opt.color || statusColors.Support}" />
+          </label>
+          <button class="ghost" data-remove="${opt.name}">Entfernen</button>
+        </div>`
     )
     .join("");
 }
@@ -676,12 +687,13 @@ function renderActivityOptions() {
 function applyActivityOptionsToUI() {
   if (!dayStatus) return;
   const selected = dayStatus.value;
-  dayStatus.innerHTML = activityOptions.map((opt) => `<option value="${opt}">${opt}</option>`).join("");
-  dayStatus.value = selected && activityOptions.includes(selected) ? selected : activityOptions[0] || "Support";
+  dayStatus.innerHTML = activityOptions.map((opt) => `<option value="${opt.name}">${opt.name}</option>`).join("");
+  const names = activityOptions.map((opt) => opt.name);
+  dayStatus.value = selected && names.includes(selected) ? selected : names[0] || "Support";
   statusLegend.innerHTML = activityOptions
     .map(
-      (label) =>
-        `<div class="legend-item"><span class="legend-swatch" style="background:${statusColors[label] || statusColors.Support}"></span>${label}</div>`
+      (opt) =>
+        `<div class="legend-item"><span class="legend-swatch" style="background:${opt.color || statusColors.Support}"></span>${opt.name}</div>`
     )
     .join("") +
     `<div class="legend-item"><span class="legend-swatch" style="background:${statusColors.Keine}"></span>Keine Arbeitszeit</div>`;
@@ -1920,7 +1932,14 @@ async function initSetup() {
   }
   holidayOverrides = settings.holidayOverrides || {};
   if (settings.activityOptions && Array.isArray(settings.activityOptions) && settings.activityOptions.length) {
-    activityOptions = settings.activityOptions;
+    if (typeof settings.activityOptions[0] === "string") {
+      activityOptions = settings.activityOptions.map((name) => ({
+        name,
+        color: statusColors[name] || statusColors.Support,
+      }));
+    } else {
+      activityOptions = settings.activityOptions;
+    }
   }
   if (companyAccent && settings.accent) companyAccent.value = settings.accent;
   setCompanyBranding(settings);
@@ -2104,7 +2123,9 @@ if (activityAdd) {
   activityAdd.addEventListener("click", async () => {
     const name = (activityInput.value || "").trim();
     if (!name) return;
-    if (!activityOptions.includes(name)) activityOptions.push(name);
+    if (!activityOptions.find((opt) => opt.name === name)) {
+      activityOptions.push({ name, color: statusColors.Support });
+    }
     activityInput.value = "";
     await saveSettingsWithLogo(null);
     renderActivityOptions();
@@ -2117,8 +2138,21 @@ if (activityList) {
     const btn = event.target.closest("button");
     if (!btn || !btn.dataset.remove) return;
     const name = btn.dataset.remove;
-    activityOptions = activityOptions.filter((opt) => opt !== name);
+    activityOptions = activityOptions.filter((opt) => opt.name !== name);
     if (!activityOptions.length) activityOptions = [...defaultActivityOptions];
+    await saveSettingsWithLogo(null);
+    renderActivityOptions();
+    applyActivityOptionsToUI();
+  });
+}
+
+if (activityList) {
+  activityList.addEventListener("input", async (event) => {
+    const input = event.target;
+    if (!input || !input.dataset.color) return;
+    const index = Number(input.dataset.color);
+    if (Number.isNaN(index) || !activityOptions[index]) return;
+    activityOptions[index].color = input.value;
     await saveSettingsWithLogo(null);
     renderActivityOptions();
     applyActivityOptionsToUI();
