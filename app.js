@@ -1044,7 +1044,7 @@ function openMemberModal({ mode, memberId = null }) {
   memberSystemRole.disabled = state.user.role !== "supervisor";
   memberSystemRole.innerHTML =
     state.user.role === "supervisor"
-      ? "<option value=\"user\">Benutzer</option><option value=\"admin\">Teamleader</option><option value=\"supervisor\">Supervisor</option>"
+      ? "<option value=\"admin\">Teamleader</option><option value=\"supervisor\">Supervisor</option>"
       : "<option value=\"user\">Benutzer</option>";
 
   memberModal.hidden = false;
@@ -1068,6 +1068,14 @@ async function saveMemberDraft() {
   }
   if (!memberTeam.value) return;
   memberError.hidden = true;
+
+  if (state.user.role === "supervisor") {
+    if (memberSystemRole.value !== "admin" && memberSystemRole.value !== "supervisor") {
+      memberError.textContent = "Supervisor kann nur Teamleader oder Supervisor anlegen.";
+      memberError.hidden = false;
+      return;
+    }
+  }
 
   if (state.memberDraft.mode === "edit") {
     const payload = {
