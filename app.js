@@ -182,6 +182,7 @@ const state = {
   hierarchyDraft: null,
   memberDraft: null,
   pendingMember: null,
+  pendingMemberSubmitting: false,
   userMonthDate: new Date(),
   teamCalendarDate: new Date(),
 };
@@ -1235,6 +1236,7 @@ function closeMemberConfirmModal() {
   if (memberConfirmContinue) memberConfirmContinue.disabled = true;
   if (memberConfirmCopy) memberConfirmCopy.textContent = "Daten kopieren";
   if (memberConfirmAck) memberConfirmAck.checked = false;
+  state.pendingMemberSubmitting = false;
 }
 
 function showMemberConfirm(payload) {
@@ -1286,6 +1288,9 @@ function showMemberConfirm(payload) {
 
   memberConfirmContinue.onclick = async () => {
     if (!state.pendingMember) return;
+    if (state.pendingMemberSubmitting) return;
+    state.pendingMemberSubmitting = true;
+    memberConfirmContinue.disabled = true;
     try {
       await apiFetch("/api/users", {
         method: "POST",
@@ -1295,9 +1300,12 @@ function showMemberConfirm(payload) {
       closeMember();
       closeMemberConfirmModal();
       state.pendingMember = null;
+      memberError.hidden = true;
     } catch (err) {
       memberError.textContent = "Speichern fehlgeschlagen (Benutzername evtl. vergeben).";
       memberError.hidden = false;
+      state.pendingMemberSubmitting = false;
+      memberConfirmContinue.disabled = false;
     }
   };
 
