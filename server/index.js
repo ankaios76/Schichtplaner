@@ -49,7 +49,8 @@ async function createSchemaWith(client, execFn) {
         role_title TEXT NOT NULL,
         email TEXT,
         phone TEXT,
-        state TEXT
+        state TEXT,
+        avatar TEXT
       );
       CREATE TABLE IF NOT EXISTS hierarchy_nodes (
         id SERIAL PRIMARY KEY,
@@ -105,6 +106,14 @@ async function createSchemaWith(client, execFn) {
         END IF;
       END $$;
     `);
+    await execFn(`
+      DO $$
+      BEGIN
+        IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='users' AND column_name='avatar') THEN
+          ALTER TABLE users ADD COLUMN avatar TEXT;
+        END IF;
+      END $$;
+    `);
     return;
   }
 
@@ -120,7 +129,8 @@ async function createSchemaWith(client, execFn) {
       role_title VARCHAR(255) NOT NULL,
       email VARCHAR(255),
       phone VARCHAR(255),
-      state VARCHAR(50)
+      state VARCHAR(50),
+      avatar LONGTEXT
     );
   `);
   await execFn(`
@@ -176,6 +186,9 @@ async function createSchemaWith(client, execFn) {
   } catch {}
   try {
     await execFn("ALTER TABLE settings ADD COLUMN IF NOT EXISTS footer_text TEXT");
+  } catch {}
+  try {
+    await execFn("ALTER TABLE users ADD COLUMN IF NOT EXISTS avatar LONGTEXT");
   } catch {}
 }
 
@@ -418,7 +431,7 @@ if (BOOTSTRAP_MODE) {
   if (!username || !password) return res.status(400).json({ error: "Missing credentials" });
 
   const rows = await query(
-    "SELECT id, name, username, password_hash, system_role, team, status, role_title, email, phone, state FROM users WHERE username = ?",
+    "SELECT id, name, username, password_hash, system_role, team, status, role_title, email, phone, state, avatar FROM users WHERE username = ?",
     [username]
   );
   const user = rows[0];
@@ -438,6 +451,7 @@ if (BOOTSTRAP_MODE) {
     email: user.email,
     phone: user.phone,
     state: user.state,
+    avatar: user.avatar,
   });
 });
 
@@ -530,7 +544,7 @@ app.post("/api/hierarchy", async (req, res) => {
 
   app.get("/api/users", async (req, res) => {
   const rows = await query(
-    "SELECT id, name, username, system_role, team, status, role_title, email, phone, state FROM users",
+    "SELECT id, name, username, system_role, team, status, role_title, email, phone, state, avatar FROM users",
     []
   );
   res.json(
@@ -545,12 +559,13 @@ app.post("/api/hierarchy", async (req, res) => {
       email: u.email,
       phone: u.phone,
       state: u.state,
+      avatar: u.avatar,
     }))
   );
 });
 
   app.post("/api/users", async (req, res) => {
-  const { name, username, password, systemRole, team, status, role, email, phone, state } = req.body || {};
+  const { name, username, password, systemRole, team, status, role, email, phone, state, avatar } = req.body || {};
   if (!name || !username || !password || !systemRole || !team || !status) {
     return res.status(400).json({ error: "Missing fields" });
   }
@@ -558,8 +573,8 @@ app.post("/api/hierarchy", async (req, res) => {
   const hash = bcrypt.hashSync(password, 10);
   try {
     await execute(
-      "INSERT INTO users (name, username, password_hash, system_role, team, status, role_title, email, phone, state) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
-      [name, username, hash, systemRole, team, status, roleValue, email || null, phone || null, state || null]
+      "INSERT INTO users (name, username, password_hash, system_role, team, status, role_title, email, phone, state, avatar) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+      [name, username, hash, systemRole, team, status, roleValue, email || null, phone || null, state || null, avatar || null]
     );
     res.json({ ok: true });
   } catch (err) {
@@ -569,7 +584,7 @@ app.post("/api/hierarchy", async (req, res) => {
 
   app.put("/api/users/:id", async (req, res) => {
   const id = Number(req.params.id);
-  const { name, username, password, systemRole, team, status, role, email, phone, state } = req.body || {};
+  const { name, username, password, systemRole, team, status, role, email, phone, state, avatar } = req.body || {};
   const rows = await query("SELECT id FROM users WHERE id = ?", [id]);
   if (!rows[0]) return res.status(404).json({ error: "Not found" });
 
@@ -588,6 +603,7 @@ app.post("/api/hierarchy", async (req, res) => {
     email,
     phone,
     state,
+    avatar,
   };
 
   for (const [key, value] of Object.entries(fields)) {

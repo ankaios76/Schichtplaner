@@ -884,7 +884,7 @@ function renderTeam() {
       member.systemRole === "supervisor" ? "Supervisor" : member.systemRole === "admin" ? "Teamleiter" : "Benutzer";
     const roleTeamLine =
       state.user.role === "supervisor" ? "" : `<div class="muted">${member.role} · ${teamLabel}</div>`;
-    const avatarUrl = localStorage.getItem(`avatar_${member.id}`) || "";
+    const avatarUrl = member.avatar || "";
     const avatarStyle = avatarUrl ? `style="background-image: url('${avatarUrl}');"` : "";
     const avatarText = avatarUrl ? "" : initials(member.name);
     card.innerHTML = `
@@ -1286,14 +1286,11 @@ async function clearMonth() {
 }
 
 function updateUserProfile() {
-  const avatar = localStorage.getItem("avatar");
+  const avatar = state.user && state.user.avatar ? state.user.avatar : null;
   if (avatar) {
     profilePhoto.style.backgroundImage = `url(${avatar})`;
     sidebarAvatar.style.backgroundImage = `url(${avatar})`;
     sidebarAvatar.textContent = "";
-    if (state.user && state.user.memberId) {
-      localStorage.setItem(`avatar_${state.user.memberId}`, avatar);
-    }
   } else {
     profilePhoto.style.backgroundImage = "none";
     sidebarAvatar.style.backgroundImage = "none";
@@ -1931,6 +1928,7 @@ function handleLogin(event) {
         team: member.team,
         memberId: member.id,
         state: ensureDefaultStateForUser(member),
+        avatar: member.avatar || null,
       };
       loginView.hidden = true;
       appView.hidden = false;
@@ -2316,9 +2314,16 @@ avatarUpload.addEventListener("change", (event) => {
   reader.readAsDataURL(file);
 });
 
-removeAvatarBtn.addEventListener("click", () => {
-  localStorage.removeItem("avatar");
+removeAvatarBtn.addEventListener("click", async () => {
+  try {
+    await apiFetch(`/api/users/${state.user.memberId}`, {
+      method: "PUT",
+      body: JSON.stringify({ avatar: null }),
+    });
+  } catch {}
+  state.user.avatar = null;
   updateUserProfile();
+  await loadData();
 });
 
 if (avatarCropCanvas) {
@@ -2366,12 +2371,21 @@ if (avatarCropZoom) {
 }
 
 if (applyAvatarCrop) {
-  applyAvatarCrop.addEventListener("click", () => {
+  applyAvatarCrop.addEventListener("click", async () => {
     if (!cropImage) return;
     const dataUrl = avatarCropCanvas.toDataURL("image/png");
-    localStorage.setItem("avatar", dataUrl);
-    updateUserProfile();
-    closeCropper();
+    try {
+      await apiFetch(`/api/users/${state.user.memberId}`, {
+        method: "PUT",
+        body: JSON.stringify({ avatar: dataUrl }),
+      });
+      state.user.avatar = dataUrl;
+      updateUserProfile();
+      await loadData();
+      closeCropper();
+    } catch (err) {
+      closeCropper();
+    }
   });
 }
 
