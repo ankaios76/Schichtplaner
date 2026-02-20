@@ -87,6 +87,9 @@ const userTeamCalendar = document.getElementById("userTeamCalendar");
 const userWeekLabel = document.getElementById("userWeekLabel");
 const userPrevPage = document.getElementById("userPrevPage");
 const userNextPage = document.getElementById("userNextPage");
+const userPrevDay = document.getElementById("userPrevDay");
+const userNextDay = document.getElementById("userNextDay");
+const userDayPager = document.getElementById("userDayPager");
 const teamCalendarGrid = document.getElementById("teamCalendarGrid");
 const teamCalendarLabel = document.getElementById("teamCalendarLabel");
 const teamCalendarPrev = document.getElementById("teamCalendarPrev");
@@ -1782,8 +1785,9 @@ function renderUserDashboard() {
   state.userWeekOffset = Math.min(state.userWeekOffset, maxOffset);
   const visibleDays = days.slice(state.userWeekOffset, state.userWeekOffset + daysPerPage);
 
-  if (userPrevPage) userPrevPage.disabled = state.userWeekOffset === 0;
-  if (userNextPage) userNextPage.disabled = state.userWeekOffset >= maxOffset;
+  if (userDayPager) userDayPager.hidden = maxOffset === 0;
+  if (userPrevDay) userPrevDay.disabled = state.userWeekOffset === 0;
+  if (userNextDay) userNextDay.disabled = state.userWeekOffset >= maxOffset;
 
   const usersWithShifts = new Map();
   days.forEach((date) => {
@@ -1802,7 +1806,7 @@ function renderUserDashboard() {
   });
 
   const userList = Array.from(usersWithShifts.values()).sort((a, b) => a.name.localeCompare(b.name));
-  const columnWidth = 18;
+  const columnWidth = 28;
 
   visibleDays.forEach((date) => {
     const cell = document.createElement("div");
@@ -1854,7 +1858,7 @@ function renderUserDashboard() {
         const avatar = document.createElement("div");
         avatar.className = "shift-avatar";
         avatar.style.top = `calc(${top}% - 16px)`;
-        avatar.style.left = `${left - 10}px`;
+        avatar.style.left = `${left - 6}px`;
         const u = userList[userIndex];
         if (u.avatar) {
           avatar.style.backgroundImage = `url(${u.avatar})`;
@@ -2540,14 +2544,34 @@ nextMonthBtn.addEventListener("click", () => {
 });
 
 if (userPrevPage) {
-  userPrevPage.addEventListener("click", () => {
-    state.userWeekOffset = Math.max(0, state.userWeekOffset - state.userWeekPageSize);
+  userPrevPage.addEventListener("click", async () => {
+    if (!state.userWeekStart) state.userWeekStart = getWeekStart(new Date());
+    state.userWeekStart.setDate(state.userWeekStart.getDate() - 7);
+    state.userWeekOffset = 0;
+    await loadTeamWeekShifts();
     renderUserDashboard();
   });
 }
 
 if (userNextPage) {
-  userNextPage.addEventListener("click", () => {
+  userNextPage.addEventListener("click", async () => {
+    if (!state.userWeekStart) state.userWeekStart = getWeekStart(new Date());
+    state.userWeekStart.setDate(state.userWeekStart.getDate() + 7);
+    state.userWeekOffset = 0;
+    await loadTeamWeekShifts();
+    renderUserDashboard();
+  });
+}
+
+if (userPrevDay) {
+  userPrevDay.addEventListener("click", () => {
+    state.userWeekOffset = Math.max(0, state.userWeekOffset - state.userWeekPageSize);
+    renderUserDashboard();
+  });
+}
+
+if (userNextDay) {
+  userNextDay.addEventListener("click", () => {
     state.userWeekOffset = Math.min(6, state.userWeekOffset + state.userWeekPageSize);
     renderUserDashboard();
   });
