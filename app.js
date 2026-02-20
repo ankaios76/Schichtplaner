@@ -157,6 +157,16 @@ const submitSwap = document.getElementById("submitSwap");
 const swapDate = document.getElementById("swapDate");
 const swapReason = document.getElementById("swapReason");
 const logoutBtn = document.getElementById("logoutBtn");
+const settingsCompany = document.getElementById("settingsCompany");
+const settingsLogo = document.getElementById("settingsLogo");
+const settingsAccent = document.getElementById("settingsAccent");
+const settingsSave = document.getElementById("settingsSave");
+const holidayState = document.getElementById("holidayState");
+const holidayDate = document.getElementById("holidayDate");
+const holidayName = document.getElementById("holidayName");
+const holidayAdd = document.getElementById("holidayAdd");
+const holidayRemove = document.getElementById("holidayRemove");
+const holidayList = document.getElementById("holidayList");
 const teamModal = document.getElementById("teamModal");
 const closeTeamModal = document.getElementById("closeTeamModal");
 const cancelTeam = document.getElementById("cancelTeam");
@@ -185,6 +195,7 @@ const state = {
   pendingMemberSubmitting: false,
   userMonthDate: new Date(),
   teamCalendarDate: new Date(),
+  settings: {},
 };
 
 const typeLabels = {
@@ -206,6 +217,7 @@ const childTypes = {
 const menus = {
   supervisor: [
     { id: "hierarchy", label: "Unternehmen" },
+    { id: "settings", label: "Grundeinstellungen" },
     { id: "team", label: "Teamleiter" },
   ],
   admin: [
@@ -226,6 +238,21 @@ const menus = {
 };
 
 const weekdayLabels = ["Mo", "Di", "Mi", "Do", "Fr", "Sa", "So"];
+let holidayOverrides = {};
+
+function setAccentColor(color) {
+  if (!color) return;
+  const hex = color.replace("#", "");
+  if (hex.length !== 6) return;
+  const r = parseInt(hex.slice(0, 2), 16);
+  const g = parseInt(hex.slice(2, 4), 16);
+  const b = parseInt(hex.slice(4, 6), 16);
+  const dark = (v) => Math.max(0, Math.min(255, Math.round(v * 0.78)));
+  const soft = (v) => Math.max(0, Math.min(255, Math.round(v + (255 - v) * 0.75)));
+  document.documentElement.style.setProperty("--accent", `#${hex}`);
+  document.documentElement.style.setProperty("--accent-dark", `rgb(${dark(r)}, ${dark(g)}, ${dark(b)})`);
+  document.documentElement.style.setProperty("--accent-soft", `rgb(${soft(r)}, ${soft(g)}, ${soft(b)})`);
+}
 
 function resetToLogin() {
   loginView.hidden = false;
@@ -257,6 +284,9 @@ function setCompanyBranding(settings) {
       el.style.backgroundImage = `url(${settings.logo})`;
       el.textContent = "";
     });
+  }
+  if (settings?.accent) {
+    setAccentColor(settings.accent);
   }
 }
 
@@ -431,6 +461,9 @@ function getHoliday(date, stateCode) {
   const map = holidayCache[year];
   const key = dateKey(date);
   const state = stateCode || "BUND";
+  if (holidayOverrides[state] && Object.prototype.hasOwnProperty.call(holidayOverrides[state], key)) {
+    return holidayOverrides[state][key] || null;
+  }
   const stateMap = map[state] || {};
   return stateMap[key] || null;
 }
@@ -455,6 +488,8 @@ function setActivePage(pageId) {
   pageUser.hidden = pageId !== "user";
   pageProfile.hidden = pageId !== "profile";
   pageSwap.hidden = pageId !== "swap";
+  const pageSettings = document.getElementById("pageSettings");
+  if (pageSettings) pageSettings.hidden = pageId !== "settings";
   if (pageTeamCalendar) pageTeamCalendar.hidden = pageId !== "team-calendar";
   pageUserDashboard.hidden = true;
   const showDashboard = pageId === "dashboard";
@@ -557,6 +592,36 @@ function renderMenu(role) {
     menuList.appendChild(btn);
   });
   setActivePage("dashboard");
+}
+
+function renderHolidayOverrides() {
+  if (!holidayList) return;
+  const state = holidayState ? holidayState.value : "BUND";
+  const map = (holidayOverrides && holidayOverrides[state]) || {};
+  const entries = Object.entries(map).sort(([a], [b]) => (a < b ? -1 : 1));
+  holidayList.innerHTML = entries.length
+    ? entries
+        .map(
+          ([date, name]) =>
+            `<div class="template-day"><strong>${date}</strong><div class="muted">${name || "entfernt"}</div></div>`
+        )
+        .join("")
+    : `<div class="muted">Keine Korrekturen.</div>`;
+}
+
+async function saveSettingsWithLogo(logoData) {
+  const payload = {
+    companyName: settingsCompany.value.trim(),
+    logo: logoData !== null ? logoData : (state.settings.logo || null),
+    accent: settingsAccent.value || null,
+    holidayOverrides,
+  };
+  await apiFetch("/api/settings", {
+    method: "POST",
+    body: JSON.stringify(payload),
+  });
+  state.settings = { ...state.settings, ...payload };
+  setCompanyBranding(payload);
 }
 
 function applyRoleUI() {
@@ -1729,6 +1794,14 @@ function handleLogin(event) {
         .then(loadTeamWeekShifts)
         .then(renderUserDashboard)
         .catch(() => renderUserDashboard());
+      if (member.systemRole === "supervisor") {
+        settingsCompany.value = state.settings.companyName || (sidebarCompany && sidebarCompany.textContent) || "";
+        settingsAccent.value =
+          state.settings.accent || getComputedStyle(document.documentElement).getPropertyValue("--accent").trim() || "#8b0f3a";
+        holidayState.innerHTML = stateOptions.map((opt) => `<option value="${opt.code}">${opt.label}</option>`).join("");
+        holidayState.value = "NW";
+        renderHolidayOverrides();
+      }
       renderAdminDashboard();
     })
     .catch((err) => {
@@ -1760,11 +1833,13 @@ async function initSetup() {
   }
 
   const settings = await apiFetch("/api/settings");
+  state.settings = settings || {};
   if (!settings?.companyName) {
     setupView.hidden = false;
     loginView.hidden = true;
     return;
   }
+  holidayOverrides = settings.holidayOverrides || {};
   setCompanyBranding(settings);
   if (!settings?.hasSupervisor) {
     supervisorSetupView.hidden = false;
@@ -1892,6 +1967,50 @@ supervisorSetupBtn.addEventListener("click", async () => {
   supervisorSetupView.hidden = true;
   loginView.hidden = false;
 });
+
+if (settingsSave) {
+  settingsSave.addEventListener("click", async () => {
+    if (!settingsCompany.value.trim()) return;
+    let logoData = null;
+    if (settingsLogo.files && settingsLogo.files[0]) {
+      logoData = await new Promise((resolve) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result);
+        reader.readAsDataURL(settingsLogo.files[0]);
+      });
+    }
+    await saveSettingsWithLogo(logoData);
+  });
+}
+
+if (holidayState) {
+  holidayState.addEventListener("change", renderHolidayOverrides);
+}
+
+if (holidayAdd) {
+  holidayAdd.addEventListener("click", async () => {
+    const state = holidayState.value;
+    const date = holidayDate.value;
+    const name = holidayName.value.trim();
+    if (!state || !date || !name) return;
+    holidayOverrides[state] = holidayOverrides[state] || {};
+    holidayOverrides[state][date] = name;
+    await saveSettingsWithLogo(null);
+    renderHolidayOverrides();
+  });
+}
+
+if (holidayRemove) {
+  holidayRemove.addEventListener("click", async () => {
+    const state = holidayState.value;
+    const date = holidayDate.value;
+    if (!state || !date) return;
+    holidayOverrides[state] = holidayOverrides[state] || {};
+    holidayOverrides[state][date] = null;
+    await saveSettingsWithLogo(null);
+    renderHolidayOverrides();
+  });
+}
 
 weeklyTargetInput.addEventListener("input", updateWeeklyTotal);
 

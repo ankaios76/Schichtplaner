@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Schichtplaner</title>
-  <link rel="stylesheet" href="styles.css?v=20260220ad" />
+  <link rel="stylesheet" href="styles.css?v=20260220ae" />
 </head>
 <body>
   <div id="app">
@@ -314,6 +314,53 @@
             <div class="muted">Nur Supervisor kann bearbeiten.</div>
           </div>
           <div class="hierarchy" id="hierarchyTree"></div>
+        </section>
+
+        <section class="page" id="pageSettings" hidden>
+          <div class="page-header">
+            <h3>Grundeinstellungen</h3>
+            <p class="muted">Firmenangaben, Farben und Feiertage verwalten.</p>
+          </div>
+          <div class="profile-grid">
+            <div class="card">
+              <div class="card-title">Firma</div>
+              <label class="field">
+                <span>Firmenname</span>
+                <input id="settingsCompany" type="text" />
+              </label>
+              <label class="field">
+                <span>Firmenlogo (optional)</span>
+                <input id="settingsLogo" type="file" accept="image/*" />
+              </label>
+              <label class="field">
+                <span>Akzentfarbe</span>
+                <input id="settingsAccent" type="color" />
+              </label>
+              <button class="primary" id="settingsSave">Speichern</button>
+            </div>
+
+            <div class="card">
+              <div class="card-title">Feiertage korrigieren</div>
+              <label class="field">
+                <span>Bundesland</span>
+                <select id="holidayState"></select>
+              </label>
+              <label class="field">
+                <span>Datum</span>
+                <input id="holidayDate" type="date" />
+              </label>
+              <label class="field">
+                <span>Name</span>
+                <input id="holidayName" type="text" placeholder="z. B. Sonderfeiertag" />
+              </label>
+              <div class="field-row">
+                <button class="ghost" id="holidayAdd">Feiertag setzen</button>
+                <button class="ghost" id="holidayRemove">Feiertag entfernen</button>
+              </div>
+              <div class="muted">Hinweise: Entfernen überschreibt den berechneten Feiertag.</div>
+              <div class="template-grid" id="holidayList"></div>
+            </div>
+          </div>
         </section>
 
         <section class="page" id="pageTeam" hidden>
@@ -653,6 +700,6 @@
     </div>
   </div>
 
-  <script src="app.js?v=20260220ad"></script>
+  <script src="app.js?v=20260220ae"></script>
 </body>
 </html>
