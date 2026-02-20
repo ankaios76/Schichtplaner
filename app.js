@@ -461,7 +461,9 @@ function setActivePage(pageId) {
   if (state.user && state.user.role === "admin") {
     defaultDashboard.style.display = "none";
     pageAdminDashboard.hidden = !showDashboard;
-    if (!pageTeamCalendar.hidden) renderTeamCalendar();
+    if (!pageTeamCalendar.hidden) {
+      loadTeamWeekShifts().then(renderTeamCalendar).catch(() => renderTeamCalendar());
+    }
   } else if (state.user && state.user.role === "user") {
     defaultDashboard.style.display = "none";
     pageAdminDashboard.hidden = true;
