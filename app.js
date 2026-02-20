@@ -25,6 +25,9 @@ const dbPort = document.getElementById("dbPort");
 const dbName = document.getElementById("dbName");
 const dbUser = document.getElementById("dbUser");
 const dbPass = document.getElementById("dbPass");
+const dbSetupActions = document.getElementById("dbSetupActions");
+const dbSetupCopy = document.getElementById("dbSetupCopy");
+const dbSetupContinue = document.getElementById("dbSetupContinue");
 const supervisorSetupBtn = document.getElementById("supervisorSetupBtn");
 const supervisorSetupError = document.getElementById("supervisorSetupError");
 const supervisorName = document.getElementById("supervisorName");
@@ -1519,6 +1522,7 @@ updateDbFields();
 dbSetupBtn.addEventListener("click", async () => {
   dbSetupError.hidden = true;
   dbSetupResult.hidden = true;
+  if (dbSetupActions) dbSetupActions.hidden = true;
 
   const payload = { dbClient: dbClient.value, mode: dbMode.value };
   if (payload.mode === "external") {
@@ -1538,9 +1542,25 @@ dbSetupBtn.addEventListener("click", async () => {
       method: "POST",
       body: JSON.stringify(payload),
     });
-    dbSetupResult.textContent = `DB eingerichtet. Benutzer: ${result.dbUser}, Passwort: ${result.dbPassword}, DB: ${result.dbName}, Host: ${result.dbHost}:${result.dbPort}. Seite wird neu geladen.`;
+    dbSetupResult.textContent = `DB eingerichtet. Benutzer: ${result.dbUser}, Passwort: ${result.dbPassword}, DB: ${result.dbName}, Host: ${result.dbHost}:${result.dbPort}. Bitte Daten kopieren und anschließend auf „Weiter“ klicken.`;
     dbSetupResult.hidden = false;
-    setTimeout(() => location.reload(), 1500);
+    if (dbSetupActions) dbSetupActions.hidden = false;
+    if (dbSetupCopy) {
+      dbSetupCopy.onclick = async () => {
+        const text = `DB Benutzer: ${result.dbUser}\nDB Passwort: ${result.dbPassword}\nDB Name: ${result.dbName}\nDB Host: ${result.dbHost}\nDB Port: ${result.dbPort}`;
+        try {
+          await navigator.clipboard.writeText(text);
+          dbSetupCopy.textContent = "Kopiert";
+          setTimeout(() => (dbSetupCopy.textContent = "Daten kopieren"), 2000);
+        } catch {
+          dbSetupCopy.textContent = "Kopieren fehlgeschlagen";
+          setTimeout(() => (dbSetupCopy.textContent = "Daten kopieren"), 2000);
+        }
+      };
+    }
+    if (dbSetupContinue) {
+      dbSetupContinue.onclick = () => location.reload();
+    }
   } catch (err) {
     dbSetupError.textContent = err && err.message ? `Datenbank-Setup fehlgeschlagen: ${err.message}` : "Datenbank-Setup fehlgeschlagen.";
     dbSetupError.hidden = false;

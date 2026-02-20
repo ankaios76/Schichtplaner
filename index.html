@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Schichtplaner</title>
-  <link rel="stylesheet" href="styles.css?v=20260220a" />
+  <link rel="stylesheet" href="styles.css?v=20260220b" />
 </head>
 <body>
   <div id="app">
@@ -81,6 +81,10 @@
         </div>
         <div class="hint error" id="dbSetupError" hidden>Bitte alle Pflichtfelder ausfüllen.</div>
         <div class="hint success" id="dbSetupResult" hidden></div>
+        <div class="field-row" id="dbSetupActions" hidden>
+          <button class="ghost" id="dbSetupCopy" type="button">Daten kopieren</button>
+          <button class="primary" id="dbSetupContinue" type="button">Weiter</button>
+        </div>
         <button class="primary" id="dbSetupBtn">Datenbank einrichten</button>
       </div>
     </section>
@@ -606,6 +610,6 @@
     </div>
   </div>
 
-  <script src="app.js?v=20260220a"></script>
+  <script src="app.js?v=20260220b"></script>
 </body>
 </html>
