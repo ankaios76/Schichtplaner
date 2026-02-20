@@ -49,7 +49,6 @@ const sidebarRole = document.getElementById("sidebarRole");
 const sidebarAvatar = document.getElementById("sidebarAvatar");
 const sidebarCompany = document.getElementById("sidebarCompany");
 const sidebarLogo = document.getElementById("sidebarLogo");
-const supportBtn = document.getElementById("supportBtn");
 const profileName = document.getElementById("profileName");
 const profilePhoto = document.getElementById("profilePhoto");
 const profilePosition = document.getElementById("profilePosition");
@@ -255,6 +254,7 @@ const menus = {
     { id: "hierarchy", label: "Unternehmen" },
     { id: "settings", label: "Grundeinstellungen" },
     { id: "team", label: "Teamleiter und Supervisor" },
+    { id: "support", label: "Hilfe" },
   ],
   admin: [
     { id: "dashboard", label: "Teamleiter-Dashboard" },
@@ -263,6 +263,7 @@ const menus = {
     { id: "user", label: "Meine Arbeitszeit" },
     { id: "profile", label: "Mein Profil" },
     { id: "swap", label: "Schichttausch" },
+    { id: "support", label: "Hilfe" },
   ],
   user: [
     { id: "dashboard", label: "Startseite" },
@@ -270,6 +271,7 @@ const menus = {
     { id: "user", label: "Meine Arbeitszeit" },
     { id: "profile", label: "Mein Profil" },
     { id: "swap", label: "Schichttausch" },
+    { id: "support", label: "Hilfe" },
   ],
 };
 
@@ -285,6 +287,7 @@ const menuIcons = {
   user: `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 12a4 4 0 1 0-4-4 4 4 0 0 0 4 4zm-7 9a7 7 0 0 1 14 0z" /></svg>`,
   profile: `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 12a4 4 0 1 0-4-4 4 4 0 0 0 4 4zm-7 9a7 7 0 0 1 14 0z" /></svg>`,
   swap: `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 7h9l-2-2M17 17H8l2 2M7 7l-2 2m12 8l2-2" /></svg>`,
+  support: `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2a10 10 0 1 0 10 10A10 10 0 0 0 12 2zm0 17a1.25 1.25 0 1 1 1.25-1.25A1.25 1.25 0 0 1 12 19zm1.6-5.2c-.9.6-1.1 1-1.1 1.7v.5h-2v-.8c0-1.2.5-2 1.8-2.9.8-.6 1.2-1 1.2-1.8a1.8 1.8 0 0 0-3.6 0H8a3.8 3.8 0 0 1 7.6 0c0 1.4-.8 2.4-2 3.3z" /></svg>`,
 };
 
 function setAccentColor(color) {
@@ -2799,12 +2802,6 @@ logoutBtn.addEventListener("click", () => {
   state.user = null;
   resetToLogin();
 });
-
-if (supportBtn) {
-  supportBtn.addEventListener("click", () => {
-    setActivePage("support");
-  });
-}
 
 window.addEventListener("click", (event) => {
   return event;
