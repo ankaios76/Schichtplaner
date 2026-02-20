@@ -134,6 +134,7 @@ const closeMemberConfirm = document.getElementById("closeMemberConfirm");
 const memberConfirmDetails = document.getElementById("memberConfirmDetails");
 const memberConfirmCopy = document.getElementById("memberConfirmCopy");
 const memberConfirmContinue = document.getElementById("memberConfirmContinue");
+const memberConfirmAck = document.getElementById("memberConfirmAck");
 
 const swapList = document.getElementById("swapList");
 const swapCount = document.getElementById("swapCount");
@@ -1087,6 +1088,7 @@ function closeMemberConfirmModal() {
   if (memberConfirmModal) memberConfirmModal.hidden = true;
   if (memberConfirmContinue) memberConfirmContinue.disabled = true;
   if (memberConfirmCopy) memberConfirmCopy.textContent = "Daten kopieren";
+  if (memberConfirmAck) memberConfirmAck.checked = false;
 }
 
 function showMemberConfirm(payload) {
@@ -1105,19 +1107,36 @@ function showMemberConfirm(payload) {
   memberConfirmDetails.textContent = details.join("\n");
   memberConfirmContinue.disabled = true;
   memberConfirmCopy.textContent = "Daten kopieren";
+  if (memberConfirmAck) memberConfirmAck.checked = false;
 
   memberConfirmCopy.onclick = async () => {
+    const text = memberConfirmDetails.textContent;
+    const fallbackCopy = () => {
+      const ta = document.createElement("textarea");
+      ta.value = text;
+      document.body.appendChild(ta);
+      ta.select();
+      try {
+        document.execCommand("copy");
+        memberConfirmCopy.textContent = "Kopiert";
+      } catch {
+        memberConfirmCopy.textContent = "Kopieren fehlgeschlagen";
+      }
+      document.body.removeChild(ta);
+    };
     try {
-      await navigator.clipboard.writeText(memberConfirmDetails.textContent);
+      await navigator.clipboard.writeText(text);
       memberConfirmCopy.textContent = "Kopiert";
-      memberConfirmContinue.disabled = false;
     } catch {
-      memberConfirmCopy.textContent = "Kopieren fehlgeschlagen";
-      setTimeout(() => {
-        memberConfirmCopy.textContent = "Daten kopieren";
-      }, 2000);
+      fallbackCopy();
     }
   };
+
+  if (memberConfirmAck) {
+    memberConfirmAck.onchange = () => {
+      memberConfirmContinue.disabled = !memberConfirmAck.checked;
+    };
+  }
 
   memberConfirmContinue.onclick = async () => {
     if (!state.pendingMember) return;

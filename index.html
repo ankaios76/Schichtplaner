@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Schichtplaner</title>
-  <link rel="stylesheet" href="styles.css?v=20260220l" />
+  <link rel="stylesheet" href="styles.css?v=20260220m" />
 </head>
 <body>
   <div id="app">
@@ -555,6 +555,10 @@
         <div class="modal-body">
           <p class="muted">Bitte Zugangsdaten kopieren. Erst danach kannst du fortfahren.</p>
           <pre class="hint" id="memberConfirmDetails"></pre>
+          <label class="field inline">
+            <input type="checkbox" id="memberConfirmAck" />
+            <span>Ich habe die Daten gespeichert</span>
+          </label>
           <div class="field-row">
             <button class="ghost" id="memberConfirmCopy" type="button">Daten kopieren</button>
             <button class="primary" id="memberConfirmContinue" type="button" disabled>Weiter</button>
@@ -623,6 +627,6 @@
     </div>
   </div>
 
-  <script src="app.js?v=20260220l"></script>
+  <script src="app.js?v=20260220m"></script>
 </body>
 </html>
