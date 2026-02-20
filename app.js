@@ -179,20 +179,19 @@ const childTypes = {
 
 const menus = {
   supervisor: [
-    { id: "dashboard", label: "Startseite" },
     { id: "hierarchy", label: "Unternehmen" },
     { id: "team", label: "Team" },
-    { id: "user", label: "Mein Profil" },
+    { id: "user", label: "Meine Arbeitszeit" },
   ],
   admin: [
     { id: "dashboard", label: "Teamleiter-Dashboard" },
     { id: "team", label: "Team" },
-    { id: "user", label: "Mein Profil" },
+    { id: "user", label: "Meine Arbeitszeit" },
   ],
   user: [
     { id: "dashboard", label: "Startseite" },
     { id: "team", label: "Team" },
-    { id: "user", label: "Mein Profil" },
+    { id: "user", label: "Meine Arbeitszeit" },
   ],
 };
 
