@@ -162,6 +162,9 @@ const settingsCompany = document.getElementById("settingsCompany");
 const settingsLogo = document.getElementById("settingsLogo");
 const settingsAccent = document.getElementById("settingsAccent");
 const settingsSave = document.getElementById("settingsSave");
+const settingsFooter = document.getElementById("settingsFooter");
+const globalFooter = document.getElementById("globalFooter");
+const appFooter = document.getElementById("appFooter");
 const holidayState = document.getElementById("holidayState");
 const holidayDate = document.getElementById("holidayDate");
 const holidayName = document.getElementById("holidayName");
@@ -311,6 +314,10 @@ function setCompanyBranding(settings) {
   }
   if (settings?.accent) {
     setAccentColor(settings.accent);
+  }
+  if (settings?.footerText) {
+    if (globalFooter) globalFooter.innerHTML = settings.footerText;
+    if (appFooter) appFooter.innerHTML = settings.footerText;
   }
 }
 
@@ -713,6 +720,7 @@ async function saveSettingsWithLogo(logoData) {
     accent: settingsAccent.value || null,
     holidayOverrides,
     activityOptions,
+    footerText: settingsFooter ? settingsFooter.value.trim() : null,
   };
   await apiFetch("/api/settings", {
     method: "POST",
@@ -1890,6 +1898,10 @@ function handleLogin(event) {
         settingsCompany.value = state.settings.companyName || (sidebarCompany && sidebarCompany.textContent) || "";
         settingsAccent.value =
           state.settings.accent || getComputedStyle(document.documentElement).getPropertyValue("--accent").trim() || "#8b0f3a";
+        if (settingsFooter) {
+          settingsFooter.value =
+            state.settings.footerText || "Made with Love in Bremen <span class=\"heart\">♥</span> by Norbert Hengsteler";
+        }
         holidayState.innerHTML = stateOptions.map((opt) => `<option value="${opt.code}">${opt.label}</option>`).join("");
         holidayState.value = "NW";
         if (holidayViewState) {
@@ -1949,6 +1961,7 @@ async function initSetup() {
     }
   }
   if (companyAccent && settings.accent) companyAccent.value = settings.accent;
+  if (settingsFooter) settingsFooter.value = settings.footerText || "Made with Love in Bremen <span class=\"heart\">♥</span> by Norbert Hengsteler";
   setCompanyBranding(settings);
   if (!settings?.hasSupervisor) {
     supervisorSetupView.hidden = false;

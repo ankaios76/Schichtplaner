@@ -81,7 +81,8 @@ async function createSchemaWith(client, execFn) {
         logo TEXT,
         accent TEXT,
         holiday_overrides TEXT,
-        activity_options TEXT
+        activity_options TEXT,
+        footer_text TEXT
       );
     `);
     await execFn(
@@ -98,6 +99,9 @@ async function createSchemaWith(client, execFn) {
         END IF;
         IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='settings' AND column_name='activity_options') THEN
           ALTER TABLE settings ADD COLUMN activity_options TEXT;
+        END IF;
+        IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='settings' AND column_name='footer_text') THEN
+          ALTER TABLE settings ADD COLUMN footer_text TEXT;
         END IF;
       END $$;
     `);
@@ -156,7 +160,8 @@ async function createSchemaWith(client, execFn) {
       logo LONGTEXT,
       accent VARCHAR(32),
       holiday_overrides LONGTEXT,
-      activity_options LONGTEXT
+      activity_options LONGTEXT,
+      footer_text TEXT
     );
   `);
   await execFn("INSERT IGNORE INTO settings (id, company_name, logo) VALUES (1, NULL, NULL)");
@@ -168,6 +173,9 @@ async function createSchemaWith(client, execFn) {
   } catch {}
   try {
     await execFn("ALTER TABLE settings ADD COLUMN IF NOT EXISTS activity_options LONGTEXT");
+  } catch {}
+  try {
+    await execFn("ALTER TABLE settings ADD COLUMN IF NOT EXISTS footer_text TEXT");
   } catch {}
 }
 
@@ -434,7 +442,7 @@ if (BOOTSTRAP_MODE) {
 });
 
   app.get("/api/settings", async (req, res) => {
-    const rows = await query("SELECT company_name, logo, accent, holiday_overrides, activity_options FROM settings WHERE id = 1", []);
+    const rows = await query("SELECT company_name, logo, accent, holiday_overrides, activity_options, footer_text FROM settings WHERE id = 1", []);
     const row = rows[0] || {};
     res.json({
       companyName: row.company_name || null,
@@ -442,21 +450,23 @@ if (BOOTSTRAP_MODE) {
       accent: row.accent || null,
       holidayOverrides: row.holiday_overrides ? JSON.parse(row.holiday_overrides) : {},
       activityOptions: row.activity_options ? JSON.parse(row.activity_options) : null,
+      footerText: row.footer_text || null,
       hasSupervisor: await hasSupervisor(),
     });
   });
 
   app.post("/api/settings", async (req, res) => {
-    const { companyName, logo, accent, holidayOverrides, activityOptions } = req.body || {};
+    const { companyName, logo, accent, holidayOverrides, activityOptions, footerText } = req.body || {};
     if (!companyName) return res.status(400).json({ error: "Missing company name" });
     const overridesJson = holidayOverrides ? JSON.stringify(holidayOverrides) : null;
     const activityJson = activityOptions ? JSON.stringify(activityOptions) : null;
-    await execute("UPDATE settings SET company_name = ?, logo = ?, accent = ?, holiday_overrides = ?, activity_options = ? WHERE id = 1", [
+    await execute("UPDATE settings SET company_name = ?, logo = ?, accent = ?, holiday_overrides = ?, activity_options = ?, footer_text = ? WHERE id = 1", [
       companyName,
       logo || null,
       accent || null,
       overridesJson,
       activityJson,
+      footerText || null,
     ]);
     res.json({ ok: true });
   });

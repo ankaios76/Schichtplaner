@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Schichtplaner</title>
-  <link rel="stylesheet" href="styles.css?v=20260220ap" />
+  <link rel="stylesheet" href="styles.css?v=20260220aq" />
 </head>
 <body>
   <div id="app">
@@ -148,7 +148,7 @@
           <button class="primary" id="loginBtn" type="submit">Einloggen</button>
         </form>
       </div>
-      <div class="muted login-footer">Made with Love in Bremen <span class="heart">♥</span> by Norbert Hengsteler</div>
+      <div class="muted login-footer" id="globalFooter">Made with Love in Bremen <span class="heart">♥</span> by Norbert Hengsteler</div>
     </section>
 
     <section class="shell" id="appView" hidden>
@@ -340,6 +340,10 @@
                 <span>Akzentfarbe</span>
                 <input id="settingsAccent" type="color" />
               </label>
+              <label class="field">
+                <span>Footer-Text</span>
+                <input id="settingsFooter" type="text" />
+              </label>
               <button class="primary" id="settingsSave">Speichern</button>
             </div>
 
@@ -508,6 +512,9 @@
           </div>
         </section>
       </main>
+      <footer class="app-footer">
+        <div class="muted" id="appFooter">Made with Love in Bremen <span class="heart">♥</span> by Norbert Hengsteler</div>
+      </footer>
     </section>
 
     <div class="modal" id="dayModal" hidden>
@@ -726,6 +733,6 @@
     </div>
   </div>
 
-  <script src="app.js?v=20260220ap"></script>
+  <script src="app.js?v=20260220aq"></script>
 </body>
 </html>
