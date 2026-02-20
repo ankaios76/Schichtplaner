@@ -1355,14 +1355,22 @@ function renderUserDashboard() {
   const teamId = String(state.user.team || "unassigned");
   const members = state.members.filter((m) => String(m.team || "unassigned") === teamId);
 
-  const today = new Date();
-  const days = Array.from({ length: 7 }, (_, i) => {
-    const d = new Date(today);
-    d.setDate(today.getDate() + i);
-    return d;
-  });
+  const monthStart = new Date();
+  monthStart.setDate(1);
+  const year = monthStart.getFullYear();
+  const month = monthStart.getMonth();
+  const totalDays = new Date(year, month + 1, 0).getDate();
+  const startDay = (monthStart.getDay() + 6) % 7; // Monday = 0
 
-  userWeekLabel.textContent = `${days[0].toLocaleDateString("de-DE")} – ${days[6].toLocaleDateString("de-DE")}`;
+  const days = [];
+  for (let i = 0; i < startDay; i += 1) {
+    days.push(null);
+  }
+  for (let day = 1; day <= totalDays; day += 1) {
+    days.push(new Date(year, month, day));
+  }
+
+  userWeekLabel.textContent = monthStart.toLocaleDateString("de-DE", { month: "long", year: "numeric" });
   userTeamCalendar.innerHTML = "";
   statusLegend.innerHTML = Object.entries(statusColors)
     .filter(([key]) => key !== "Keine")
@@ -1376,6 +1384,13 @@ function renderUserDashboard() {
   days.forEach((date) => {
     const cell = document.createElement("div");
     cell.className = "calendar-day";
+    if (!date) {
+      cell.classList.add("empty");
+      cell.innerHTML = `<div class="date"></div>`;
+      userTeamCalendar.appendChild(cell);
+      return;
+    }
+
     const dayLabel = date.toLocaleDateString("de-DE", { weekday: "short", day: "2-digit", month: "short" });
     cell.innerHTML = `<div class="date">${dayLabel}</div>`;
     cell.addEventListener("click", () => openDayModal(date));
