@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Schichtplaner</title>
-  <link rel="stylesheet" href="styles.css?v=20260220am" />
+  <link rel="stylesheet" href="styles.css?v=20260220an" />
 </head>
 <body>
   <div id="app">
@@ -135,11 +135,10 @@
           </div>
         </div>
         <h1>Login</h1>
-        <div class="muted">Build 20260219d</div>
         <form id="loginForm" onsubmit="handleLogin(event); return false;">
           <label class="field">
             <span>Benutzername</span>
-            <input id="loginUser" type="text" placeholder="Plusnet-Kürzel" autocomplete="username" />
+            <input id="loginUser" type="text" placeholder="Benutzername" autocomplete="username" />
           </label>
           <label class="field">
             <span>Passwort</span>
@@ -148,6 +147,7 @@
           <div class="hint error" id="loginError" hidden>Login fehlgeschlagen.</div>
           <button class="primary" id="loginBtn" type="submit">Einloggen</button>
         </form>
+        <div class="muted">Made with Love in Bremen (Herz) by Norbert Hengsteler</div>
       </div>
     </section>
 
@@ -726,6 +726,6 @@
     </div>
   </div>
 
-  <script src="app.js?v=20260220am"></script>
+  <script src="app.js?v=20260220an"></script>
 </body>
 </html>
