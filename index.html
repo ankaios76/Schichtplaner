@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Schichtplaner</title>
-  <link rel="stylesheet" href="styles.css?v=20260220bk" />
+  <link rel="stylesheet" href="styles.css?v=20260220bl" />
 </head>
 <body>
   <div id="app">
@@ -537,6 +537,29 @@
                 <button class="primary">Speichern</button>
               </div>
             </div>
+
+            <div class="card" id="printCard">
+              <div class="card-title">Schichtplan herunterladen</div>
+              <div class="field-row">
+                <label class="field inline">
+                  <span>Zeitraum</span>
+                  <select id="printRange">
+                    <option value="week">Woche</option>
+                    <option value="month">Monat</option>
+                  </select>
+                </label>
+                <label class="field inline" id="printDateField">
+                  <span>Datum</span>
+                  <input id="printDate" type="date" />
+                </label>
+                <label class="field inline" id="printMonthField" hidden>
+                  <span>Monat</span>
+                  <input id="printMonth" type="month" />
+                </label>
+                <button class="primary" id="printDownload">PDF herunterladen</button>
+              </div>
+              <div class="hint" id="printHint" hidden>PDF wird erstellt…</div>
+            </div>
           </div>
         </section>
 
@@ -796,6 +819,6 @@
     </div>
   </div>
 
-  <script src="app.js?v=20260220bk"></script>
+  <script src="app.js?v=20260220bl"></script>
 </body>
 </html>

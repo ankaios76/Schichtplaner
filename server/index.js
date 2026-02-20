@@ -8,6 +8,7 @@ import fs from "fs";
 import path from "path";
 import crypto from "crypto";
 import { execSync } from "child_process";
+import os from "os";
 
 dotenv.config({ path: process.env.ENV_FILE || ".env.local" });
 
@@ -297,6 +298,33 @@ function sanitizeIdentifier(value, fallback) {
   const clean = value.trim();
   if (!/^[a-zA-Z0-9_]+$/.test(clean)) return null;
   return clean;
+}
+
+function formatDateGerman(value) {
+  const [y, m, d] = value.split("-").map(Number);
+  return `${String(d).padStart(2, "0")}.${String(m).padStart(2, "0")}.${y}`;
+}
+
+function weekdayGerman(value) {
+  const [y, m, d] = value.split("-").map(Number);
+  const date = new Date(y, m - 1, d);
+  const names = ["So", "Mo", "Di", "Mi", "Do", "Fr", "Sa"];
+  return names[date.getDay()];
+}
+
+function buildDateRange(from, to) {
+  const [fy, fm, fd] = from.split("-").map(Number);
+  const [ty, tm, td] = to.split("-").map(Number);
+  const start = new Date(fy, fm - 1, fd);
+  const end = new Date(ty, tm - 1, td);
+  const out = [];
+  const current = new Date(start);
+  while (current <= end) {
+    const key = current.toISOString().split("T")[0];
+    out.push(key);
+    current.setDate(current.getDate() + 1);
+  }
+  return out;
 }
 
 function escapeSqlString(value) {
@@ -741,6 +769,95 @@ app.put("/api/hierarchy/:id", async (req, res) => {
   }
 
   res.json({ ok: true });
+});
+
+app.get("/api/shiftplan/pdf", async (req, res) => {
+  const { userId, from, to } = req.query || {};
+  if (!userId || !from || !to) return res.status(400).json({ error: "Missing fields" });
+
+  const userRows = await query("SELECT id, name FROM users WHERE id = ?", [Number(userId)]);
+  if (!userRows[0]) return res.status(404).json({ error: "User not found" });
+  const userName = userRows[0].name;
+
+  const settingRows = await query("SELECT company_name, logo FROM settings WHERE id = 1", []);
+  const companyName = settingRows[0]?.company_name || "Schichtplaner";
+  const logoData = settingRows[0]?.logo || "";
+
+  const shiftRows = await query(
+    "SELECT date, segments_json, status FROM shifts WHERE user_id = ? AND date BETWEEN ? AND ?",
+    [Number(userId), from, to]
+  );
+  const shiftMap = new Map();
+  shiftRows.forEach((row) => {
+    const segments = JSON.parse(row.segments_json || "[]");
+    shiftMap.set(row.date, { segments, status: row.status || "Support" });
+  });
+
+  const rangeDates = buildDateRange(from, to);
+  const rows = rangeDates.map((dateKey) => {
+    const entry = shiftMap.get(dateKey);
+    if (!entry || !entry.segments || !entry.segments.length) {
+      return {
+        date: dateKey,
+        weekday: weekdayGerman(dateKey),
+        times: "Keine Arbeitszeit",
+        status: "Keine",
+      };
+    }
+    const times = entry.segments.map((seg) => `${seg.start}-${seg.end}`).join(", ");
+    return {
+      date: dateKey,
+      weekday: weekdayGerman(dateKey),
+      times,
+      status: entry.status || "Support",
+    };
+  });
+
+  const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "sp-pln-"));
+  let logoPath = "";
+  if (logoData && logoData.startsWith("data:image/") && logoData.includes(";base64,")) {
+    const [meta, b64] = logoData.split(";base64,");
+    const mime = meta.replace("data:", "");
+    let ext = "png";
+    if (mime === "image/jpeg" || mime === "image/jpg") ext = "jpg";
+    if (mime === "image/svg+xml") ext = "svg";
+    logoPath = path.join(tmpDir, `logo.${ext}`);
+    fs.writeFileSync(logoPath, Buffer.from(b64, "base64"));
+  }
+
+  const mdPath = path.join(tmpDir, "plan.md");
+  const pdfPath = path.join(tmpDir, "plan.pdf");
+  const header = [];
+  if (logoPath) header.push(`![Logo](${logoPath}){width=120px}`);
+  header.push(`**${companyName}**`);
+  header.push("");
+  header.push(`# Schichtplan`);
+  header.push(`**Mitarbeiter:** ${userName}`);
+  header.push(`**Zeitraum:** ${formatDateGerman(from)} – ${formatDateGerman(to)}`);
+  header.push("");
+
+  const tableHeader = ["| Datum | Wochentag | Zeiten | Status |", "| --- | --- | --- | --- |"];
+  const tableRows = rows.map(
+    (row) => `| ${formatDateGerman(row.date)} | ${row.weekday} | ${row.times} | ${row.status} |`
+  );
+
+  fs.writeFileSync(mdPath, [...header, ...tableHeader, ...tableRows].join("\n"));
+
+  try {
+    execSync(`pandoc "${mdPath}" --pdf-engine=xelatex -V mainfont=Arial -V geometry:margin=1in -o "${pdfPath}"`);
+    const pdf = fs.readFileSync(pdfPath);
+    res.setHeader("Content-Type", "application/pdf");
+    res.setHeader("Content-Disposition", `attachment; filename="Schichtplan_${from}_${to}.pdf"`);
+    res.send(pdf);
+  } catch (err) {
+    res.status(500).json({ error: "PDF generation failed" });
+  } finally {
+    try {
+      fs.rmSync(tmpDir, { recursive: true, force: true });
+    } catch (e) {
+      // ignore
+    }
+  }
 });
 
   app.delete("/api/shifts", async (req, res) => {

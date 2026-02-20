@@ -52,6 +52,14 @@ const sidebarLogo = document.getElementById("sidebarLogo");
 const profileName = document.getElementById("profileName");
 const profilePhoto = document.getElementById("profilePhoto");
 const profilePosition = document.getElementById("profilePosition");
+const printCard = document.getElementById("printCard");
+const printRange = document.getElementById("printRange");
+const printDate = document.getElementById("printDate");
+const printDateField = document.getElementById("printDateField");
+const printMonth = document.getElementById("printMonth");
+const printMonthField = document.getElementById("printMonthField");
+const printDownload = document.getElementById("printDownload");
+const printHint = document.getElementById("printHint");
 const pageHierarchy = document.getElementById("pageHierarchy");
 const pageTeam = document.getElementById("pageTeam");
 const pageUser = document.getElementById("pageUser");
@@ -571,6 +579,18 @@ function getWeekStart(date) {
   return d;
 }
 
+function dateKeyFromDate(date) {
+  const d = new Date(date);
+  return d.toISOString().split("T")[0];
+}
+
+function getMonthRange(date) {
+  const d = new Date(date.getFullYear(), date.getMonth(), 1);
+  const start = new Date(d);
+  const end = new Date(d.getFullYear(), d.getMonth() + 1, 0);
+  return { start, end };
+}
+
 function setActivePage(pageId) {
   state.activePage = pageId;
   pageHierarchy.hidden = pageId !== "hierarchy";
@@ -835,6 +855,7 @@ function applyRoleUI() {
   addTeamBtn.hidden = role !== "admin";
   if (swapRequestsCard) swapRequestsCard.hidden = role === "supervisor";
   if (teamCoreCard) teamCoreCard.hidden = role !== "admin";
+  if (printCard) printCard.hidden = role === "supervisor";
 
   const teamFilters = document.getElementById("teamFilters");
   if (role === "supervisor") {
@@ -1439,6 +1460,70 @@ function setSupportPdf() {
   if (supportTitle) {
     const label = roleKey === "teamleiter" ? "Teamleiter" : roleKey.charAt(0).toUpperCase() + roleKey.slice(1);
     supportTitle.textContent = `Support-Handbuch (${label})`;
+  }
+}
+
+function updatePrintInputs() {
+  if (!printRange || !printDate || !printMonth) return;
+  const mode = printRange.value;
+  if (printDateField) printDateField.hidden = mode !== "week";
+  if (printMonthField) printMonthField.hidden = mode !== "month";
+  if (mode === "week") {
+    if (!printDate.value) {
+      printDate.value = dateKeyFromDate(new Date());
+    }
+  } else {
+    if (!printMonth.value) {
+      const now = new Date();
+      printMonth.value = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
+    }
+  }
+}
+
+async function downloadShiftPlan() {
+  if (!state.user || !printRange) return;
+  const mode = printRange.value;
+  let from;
+  let to;
+  if (mode === "week") {
+    const base = printDate && printDate.value ? new Date(printDate.value) : new Date();
+    const start = getWeekStart(base);
+    const end = new Date(start);
+    end.setDate(end.getDate() + 6);
+    from = dateKeyFromDate(start);
+    to = dateKeyFromDate(end);
+  } else {
+    const base = printMonth && printMonth.value ? new Date(`${printMonth.value}-01`) : new Date();
+    const range = getMonthRange(base);
+    from = dateKeyFromDate(range.start);
+    to = dateKeyFromDate(range.end);
+  }
+  if (printHint) {
+    printHint.textContent = "PDF wird erstellt…";
+    printHint.hidden = false;
+  }
+  try {
+    const res = await fetch(`${API_BASE}/api/shiftplan/pdf?userId=${state.user.memberId}&from=${from}&to=${to}`);
+    if (!res.ok) throw new Error("PDF konnte nicht erstellt werden");
+    const blob = await res.blob();
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    const name = (state.user.name || "Schichtplan").replace(/\s+/g, "_");
+    a.href = url;
+    a.download = `${name}_${from}_${to}.pdf`;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(url);
+    if (printHint) {
+      printHint.textContent = "PDF bereit.";
+      setTimeout(() => (printHint.hidden = true), 1500);
+    }
+  } catch (err) {
+    if (printHint) {
+      printHint.textContent = "Download fehlgeschlagen.";
+      printHint.hidden = false;
+    }
   }
 }
 
@@ -2134,6 +2219,7 @@ function handleLogin(event) {
       refreshUserCalendar();
       updateUserProfile();
       setSupportPdf();
+      updatePrintInputs();
       checkSwapNotice();
 
       if (member.systemRole === "supervisor") {
@@ -2684,6 +2770,9 @@ swapList.addEventListener("click", (event) => {
 submitSwap.addEventListener("click", submitSwapRequest);
 closeSwapModal.addEventListener("click", closeSwapModalDialog);
 cancelSwap.addEventListener("click", closeSwapModalDialog);
+
+if (printRange) printRange.addEventListener("change", updatePrintInputs);
+if (printDownload) printDownload.addEventListener("click", downloadShiftPlan);
 
 prevMonthBtn.addEventListener("click", () => {
   state.calendarDate.setMonth(state.calendarDate.getMonth() - 1);
