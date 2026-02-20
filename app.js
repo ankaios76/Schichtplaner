@@ -1291,21 +1291,32 @@ function showMemberConfirm(payload) {
     if (state.pendingMemberSubmitting) return;
     state.pendingMemberSubmitting = true;
     memberConfirmContinue.disabled = true;
+    let created = false;
     try {
       await apiFetch("/api/users", {
         method: "POST",
         body: JSON.stringify(state.pendingMember),
       });
-      await loadData();
-      closeMember();
-      closeMemberConfirmModal();
-      state.pendingMember = null;
-      memberError.hidden = true;
+      created = true;
     } catch (err) {
       memberError.textContent = "Speichern fehlgeschlagen (Benutzername evtl. vergeben).";
       memberError.hidden = false;
       state.pendingMemberSubmitting = false;
       memberConfirmContinue.disabled = false;
+      return;
+    }
+
+    try {
+      await loadData();
+    } catch (err) {
+      // ignore refresh error if user was created
+    }
+
+    if (created) {
+      closeMember();
+      closeMemberConfirmModal();
+      state.pendingMember = null;
+      memberError.hidden = true;
     }
   };
 
