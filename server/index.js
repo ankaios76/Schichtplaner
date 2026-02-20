@@ -228,6 +228,10 @@ function sanitizeIdentifier(value, fallback) {
   return clean;
 }
 
+function escapeSqlString(value) {
+  return String(value || "").replace(/'/g, "''");
+}
+
 function writeEnv(config) {
   const content = `PORT=3000\nDB_CLIENT=${config.client}\nDB_HOST=${config.host}\nDB_PORT=${config.port}\nDB_USER=${config.user}\nDB_PASSWORD=${config.password}\nDB_NAME=${config.name}\n`;
   fs.writeFileSync(path.join(SERVER_DIR, ".env.local"), content, "utf8");
@@ -291,13 +295,33 @@ if (BOOTSTRAP_MODE) {
 
       if (mode === "local") {
         if (client === "postgres") {
-          execSync(`sudo -u postgres psql -c "CREATE DATABASE ${name};"`, { stdio: "ignore" });
-          execSync(`sudo -u postgres psql -c "CREATE USER ${user} WITH PASSWORD '${password}';"`, { stdio: "ignore" });
+          const existsDb = execSync(
+            `sudo -u postgres psql -tAc "SELECT 1 FROM pg_database WHERE datname='${name}'"`,
+            { stdio: "pipe" }
+          )
+            .toString()
+            .trim();
+          if (!existsDb) {
+            execSync(`sudo -u postgres psql -c "CREATE DATABASE ${name};"`, { stdio: "ignore" });
+          }
+
+          const existsUser = execSync(
+            `sudo -u postgres psql -tAc "SELECT 1 FROM pg_roles WHERE rolname='${user}'"`,
+            { stdio: "pipe" }
+          )
+            .toString()
+            .trim();
+          const safePass = escapeSqlString(password);
+          if (!existsUser) {
+            execSync(`sudo -u postgres psql -c "CREATE USER ${user} WITH PASSWORD '${safePass}';"`, { stdio: "ignore" });
+          } else {
+            execSync(`sudo -u postgres psql -c "ALTER USER ${user} WITH PASSWORD '${safePass}';"`, { stdio: "ignore" });
+          }
           execSync(`sudo -u postgres psql -c "GRANT ALL PRIVILEGES ON DATABASE ${name} TO ${user};"`, { stdio: "ignore" });
         } else {
           execSync(`mysql -uroot -e "CREATE DATABASE IF NOT EXISTS ${name};"`, { stdio: "ignore" });
           execSync(
-            `mysql -uroot -e "CREATE USER IF NOT EXISTS '${user}'@'%' IDENTIFIED BY '${password}';"`,
+            `mysql -uroot -e "CREATE USER IF NOT EXISTS '${user}'@'%' IDENTIFIED BY '${escapeSqlString(password)}';"`,
             { stdio: "ignore" }
           );
           execSync(`mysql -uroot -e "GRANT ALL PRIVILEGES ON ${name}.* TO '${user}'@'%';"`, { stdio: "ignore" });
