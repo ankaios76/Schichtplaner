@@ -360,7 +360,8 @@ if (BOOTSTRAP_MODE) {
         execSync("systemctl restart sp-pln.service", { stdio: "ignore" });
       } catch {}
     } catch (err) {
-      res.status(500).json({ error: "DB setup failed" });
+      console.error("Bootstrap DB setup failed:", err);
+      res.status(500).json({ error: err?.message || "DB setup failed" });
     }
   });
 

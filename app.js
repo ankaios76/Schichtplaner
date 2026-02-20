@@ -1542,7 +1542,7 @@ dbSetupBtn.addEventListener("click", async () => {
     dbSetupResult.hidden = false;
     setTimeout(() => location.reload(), 1500);
   } catch (err) {
-    dbSetupError.textContent = "Datenbank-Setup fehlgeschlagen.";
+    dbSetupError.textContent = err && err.message ? `Datenbank-Setup fehlgeschlagen: ${err.message}` : "Datenbank-Setup fehlgeschlagen.";
     dbSetupError.hidden = false;
   }
 });
