@@ -279,8 +279,8 @@ function normalizeDateKey(value) {
 function getEntryForDate(map, date) {
   const localKey = dateKey(date);
   if (map[localKey]) return map[localKey];
-  const utcKey = dateKeyUtc(date);
-  return map[utcKey] || null;
+  const isoKey = `${localKey}T00:00:00.000Z`;
+  return map[isoKey] || null;
 }
 
 function rangeKey(from, to) {
