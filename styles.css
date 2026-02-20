@@ -253,6 +253,9 @@ button.ghost {
   height: 40px;
   border-radius: 14px;
   background: #fff;
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
   color: var(--accent);
   display: grid;
   place-items: center;
@@ -390,8 +393,9 @@ button.ghost {
   height: 64px;
   border-radius: 20px;
   background: #d8dfe2;
-  background-size: cover;
+  background-size: contain;
   background-position: center;
+  background-repeat: no-repeat;
 }
 
 .profile-actions {
