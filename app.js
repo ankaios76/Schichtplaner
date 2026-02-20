@@ -1387,8 +1387,7 @@ function renderUserDashboard() {
         const row = document.createElement("div");
         row.className = "hours team-row";
         const localKey = dateKey(date);
-        const utcKey = dateKeyUtc(date);
-        const entries = (state.teamWeekShifts[localKey] || state.teamWeekShifts[utcKey] || []).filter(
+        const entries = (state.teamWeekShifts[localKey] || []).filter(
           (s) => s.userId === member.id
         );
         const segments = entries.length ? entries[0].segments : [];
