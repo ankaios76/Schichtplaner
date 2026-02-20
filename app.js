@@ -184,7 +184,6 @@ const menus = {
   supervisor: [
     { id: "hierarchy", label: "Unternehmen" },
     { id: "team", label: "Teamleader" },
-    { id: "user", label: "Meine Arbeitszeit" },
   ],
   admin: [
     { id: "dashboard", label: "Teamleader-Dashboard" },
