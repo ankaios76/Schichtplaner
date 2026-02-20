@@ -229,7 +229,7 @@ const menus = {
   supervisor: [
     { id: "hierarchy", label: "Unternehmen" },
     { id: "settings", label: "Grundeinstellungen" },
-    { id: "team", label: "Teamleiter" },
+    { id: "team", label: "Teamleiter und Supervisor" },
   ],
   admin: [
     { id: "dashboard", label: "Teamleiter-Dashboard" },
@@ -739,18 +739,15 @@ function applyRoleUI() {
   addTeamBtn.hidden = role === "user";
   if (swapRequestsCard) swapRequestsCard.hidden = role === "supervisor";
 
+  const teamFilters = document.getElementById("teamFilters");
   if (role === "supervisor") {
-    if (teamSearch) teamSearch.hidden = true;
-    if (teamFilter) teamFilter.hidden = true;
-  } else {
-    if (teamSearch) teamSearch.hidden = false;
-    if (teamFilter) teamFilter.hidden = false;
+    if (teamFilters) teamFilters.remove();
   }
 
   if (teamPageTitle && teamPageDesc) {
     if (role === "supervisor") {
-      teamPageTitle.textContent = "Teamleiter";
-      teamPageDesc.textContent = "Supervisoren und Teamleiter anlegen, Teams zuordnen und Benutzer verwalten.";
+      teamPageTitle.textContent = "Teamleiter und Supervisor";
+      teamPageDesc.textContent = "Supervisoren und Teamleiter anlegen und verwalten.";
     } else {
       teamPageTitle.textContent = "Team-Übersicht";
       teamPageDesc.textContent = "Team-Mitglieder bearbeiten und Schichttausch-Anfragen prüfen.";
