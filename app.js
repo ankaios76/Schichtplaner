@@ -859,7 +859,15 @@ async function applyTemplateToMonth() {
   const year = date.getFullYear();
   const totalDays = new Date(year, month + 1, 0).getDate();
 
-  const updates = [];
+  const hasAnyTemplate = weekdayLabels
+    .slice(0, 5)
+    .some((_, idx) => state.template[`day-${idx}`] && state.template[`day-${idx}`].start && state.template[`day-${idx}`].end);
+  if (!hasAnyTemplate) {
+    templateNotice.textContent = "Bitte zuerst ein Template hinterlegen.";
+    return;
+  }
+
+  let failures = 0;
   for (let day = 1; day <= totalDays; day++) {
     const current = new Date(year, month, day);
     const weekday = (current.getDay() + 6) % 7; // Monday index
@@ -869,8 +877,8 @@ async function applyTemplateToMonth() {
         const key = dateKey(current);
         const segments = [{ start: template.start, end: template.end }];
         state.dayEntries[key] = { segments, status: "Support" };
-        updates.push(
-          apiFetch("/api/shifts", {
+        try {
+          await apiFetch("/api/shifts", {
             method: "POST",
             body: JSON.stringify({
               userId: state.user.memberId,
@@ -878,8 +886,10 @@ async function applyTemplateToMonth() {
               segments,
               status: "Support",
             }),
-          })
-        );
+          });
+        } catch {
+          failures += 1;
+        }
       }
     }
     if (weekday > 4) {
@@ -887,18 +897,21 @@ async function applyTemplateToMonth() {
       if (state.dayEntries[key]) {
         delete state.dayEntries[key];
       }
-      updates.push(
-        apiFetch("/api/shifts", {
+      try {
+        await apiFetch("/api/shifts", {
           method: "DELETE",
           body: JSON.stringify({ userId: state.user.memberId, date: key }),
-        })
-      );
+        });
+      } catch {
+        failures += 1;
+      }
     }
   }
 
-  await Promise.all(updates);
   localStorage.setItem("dayEntries", JSON.stringify(state.dayEntries));
-  templateNotice.textContent = "Template wurde auf den Monat angewendet.";
+  templateNotice.textContent = failures
+    ? `Template angewendet, aber ${failures} Einträge konnten nicht gespeichert werden.`
+    : "Template wurde auf den Monat angewendet.";
   await refreshUserCalendar();
   await loadTeamWeekShifts();
   renderUserDashboard();
