@@ -1785,6 +1785,25 @@ function renderUserDashboard() {
   if (userPrevPage) userPrevPage.disabled = state.userWeekOffset === 0;
   if (userNextPage) userNextPage.disabled = state.userWeekOffset >= maxOffset;
 
+  const usersWithShifts = new Map();
+  days.forEach((date) => {
+    const key = dateKey(date);
+    (state.teamWeekShifts[key] || []).forEach((entry) => {
+      if (!usersWithShifts.has(entry.userId)) {
+        const member = members.find((m) => m.id === entry.userId);
+        usersWithShifts.set(entry.userId, {
+          id: entry.userId,
+          name: entry.name || (member ? member.name : "Unbekannt"),
+          avatar: member ? member.avatar : null,
+          state: member ? member.state : "NW",
+        });
+      }
+    });
+  });
+
+  const userList = Array.from(usersWithShifts.values()).sort((a, b) => a.name.localeCompare(b.name));
+  const columnWidth = 18;
+
   visibleDays.forEach((date) => {
     const cell = document.createElement("div");
     cell.className = "day-column";
@@ -1807,43 +1826,44 @@ function renderUserDashboard() {
       body.appendChild(label);
     }
 
-    members.forEach((member, idx) => {
-      const key = dateKey(date);
-      const entries = (state.teamWeekShifts[key] || []).filter((s) => s.userId === member.id);
-      if (!entries.length) return;
-      entries.forEach((entry) => {
-        const segments = entry.segments || [];
-        segments.forEach((seg) => {
-          const start = minutesBetween("00:00", seg.start);
-          const end = minutesBetween("00:00", seg.end);
-          if (end <= start) return;
-          const top = (start / 1440) * 100;
-          const height = ((end - start) / 1440) * 100;
-          const bar = document.createElement("div");
-          bar.className = "shift-bar";
-          bar.style.top = `${top}%`;
-          bar.style.height = `${height}%`;
-          bar.style.background = statusColor(entry.status || "Support", true);
-          bar.style.left = `${44 + (idx % 3) * 8}px`;
-          bar.style.right = "10px";
-          body.appendChild(bar);
-        });
-        if (segments.length) {
-          const first = segments[0];
-          const start = minutesBetween("00:00", first.start);
-          const top = (start / 1440) * 100;
-          const avatar = document.createElement("div");
-          avatar.className = "shift-avatar";
-          avatar.style.top = `calc(${top}% - 16px)`;
-          if (member.avatar) {
-            avatar.style.backgroundImage = `url(${member.avatar})`;
-            avatar.textContent = "";
-          } else {
-            avatar.textContent = initials(member.name);
-          }
-          body.appendChild(avatar);
-        }
+    const key = dateKey(date);
+    const entries = state.teamWeekShifts[key] || [];
+    entries.forEach((entry) => {
+      const userIndex = userList.findIndex((u) => u.id === entry.userId);
+      if (userIndex === -1) return;
+      const left = 44 + userIndex * columnWidth;
+      const segments = entry.segments || [];
+      segments.forEach((seg) => {
+        const start = minutesBetween("00:00", seg.start);
+        const end = minutesBetween("00:00", seg.end);
+        if (end <= start) return;
+        const top = (start / 1440) * 100;
+        const height = ((end - start) / 1440) * 100;
+        const bar = document.createElement("div");
+        bar.className = "shift-bar";
+        bar.style.top = `${top}%`;
+        bar.style.height = `${height}%`;
+        bar.style.left = `${left}px`;
+        bar.style.background = statusColor(entry.status || "Support", true);
+        body.appendChild(bar);
       });
+      if (segments.length) {
+        const first = segments[0];
+        const start = minutesBetween("00:00", first.start);
+        const top = (start / 1440) * 100;
+        const avatar = document.createElement("div");
+        avatar.className = "shift-avatar";
+        avatar.style.top = `calc(${top}% - 16px)`;
+        avatar.style.left = `${left - 10}px`;
+        const u = userList[userIndex];
+        if (u.avatar) {
+          avatar.style.backgroundImage = `url(${u.avatar})`;
+          avatar.textContent = "";
+        } else {
+          avatar.textContent = initials(u.name);
+        }
+        body.appendChild(avatar);
+      }
     });
 
     cell.appendChild(header);

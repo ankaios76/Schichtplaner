@@ -376,10 +376,9 @@ button.ghost {
 
 .shift-bar {
   position: absolute;
-  left: 44px;
-  right: 10px;
-  border-radius: 10px;
-  opacity: 0.85;
+  width: 6px;
+  border-radius: 6px;
+  opacity: 0.9;
 }
 
 .shift-avatar {
