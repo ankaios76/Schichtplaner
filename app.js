@@ -1392,7 +1392,7 @@ function renderUserDashboard() {
         );
         const segments = entries.length ? entries[0].segments : [];
         const totalMinutes = calculateDayTotal(segments);
-        const status = entries.length ? entries[0].status || "Support" : "Support";
+        const status = entries.length ? entries[0].status || "Support" : "Keine";
         const timeLabel = segments.length ? `${formatSegments(segments)} (${formatHours(totalMinutes)})` : "–";
         const holiday = getHoliday(date, member.state);
         const holidayLabel = holiday ? ` · Feiertag: ${holiday}` : "";
