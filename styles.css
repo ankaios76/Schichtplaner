@@ -398,6 +398,25 @@ button.ghost {
   background-repeat: no-repeat;
 }
 
+.cropper {
+  display: grid;
+  place-items: center;
+  background: #f2f4f6;
+  border-radius: 16px;
+  padding: 16px;
+}
+
+#avatarCropCanvas {
+  background: #fff;
+  border-radius: 16px;
+  border: 1px solid #e1e5e8;
+  cursor: grab;
+}
+
+#avatarCropCanvas:active {
+  cursor: grabbing;
+}
+
 .profile-actions {
   display: flex;
   gap: 8px;

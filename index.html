@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Schichtplaner</title>
-  <link rel="stylesheet" href="styles.css?v=20260220ax" />
+  <link rel="stylesheet" href="styles.css?v=20260220az" />
 </head>
 <body>
   <div id="app">
@@ -673,6 +673,28 @@
       </div>
     </div>
 
+    <div class="modal" id="avatarCropModal" hidden>
+      <div class="modal-card">
+        <div class="modal-header">
+          <h4>Profilbild zuschneiden</h4>
+          <button class="ghost" id="closeAvatarCrop">×</button>
+        </div>
+        <div class="modal-body">
+          <div class="cropper">
+            <canvas id="avatarCropCanvas" width="280" height="280"></canvas>
+          </div>
+          <label class="field">
+            <span>Zoom</span>
+            <input id="avatarCropZoom" type="range" min="1" max="3" step="0.01" value="1" />
+          </label>
+        </div>
+        <div class="modal-footer">
+          <button class="ghost" id="cancelAvatarCrop">Abbrechen</button>
+          <button class="primary" id="applyAvatarCrop">Übernehmen</button>
+        </div>
+      </div>
+    </div>
+
     <div class="modal" id="memberDetailModal" hidden>
       <div class="modal-card">
         <div class="modal-header">
@@ -733,6 +755,6 @@
     </div>
   </div>
 
-  <script src="app.js?v=20260220ax"></script>
+  <script src="app.js?v=20260220az"></script>
 </body>
 </html>

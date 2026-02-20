@@ -150,6 +150,12 @@ const memberConfirmDetails = document.getElementById("memberConfirmDetails");
 const memberConfirmCopy = document.getElementById("memberConfirmCopy");
 const memberConfirmContinue = document.getElementById("memberConfirmContinue");
 const memberConfirmAck = document.getElementById("memberConfirmAck");
+const avatarCropModal = document.getElementById("avatarCropModal");
+const avatarCropCanvas = document.getElementById("avatarCropCanvas");
+const avatarCropZoom = document.getElementById("avatarCropZoom");
+const closeAvatarCrop = document.getElementById("closeAvatarCrop");
+const cancelAvatarCrop = document.getElementById("cancelAvatarCrop");
+const applyAvatarCrop = document.getElementById("applyAvatarCrop");
 
 const swapList = document.getElementById("swapList");
 const swapCount = document.getElementById("swapCount");
@@ -1289,6 +1295,49 @@ function updateUserProfile() {
   }
 }
 
+let cropImage = null;
+let cropScale = 1;
+let cropOffset = { x: 0, y: 0 };
+let cropDragging = false;
+let cropStart = { x: 0, y: 0 };
+let cropOffsetStart = { x: 0, y: 0 };
+
+function drawCropper() {
+  if (!cropImage || !avatarCropCanvas) return;
+  const ctx = avatarCropCanvas.getContext("2d");
+  const cw = avatarCropCanvas.width;
+  const ch = avatarCropCanvas.height;
+  ctx.clearRect(0, 0, cw, ch);
+  ctx.fillStyle = "#ffffff";
+  ctx.fillRect(0, 0, cw, ch);
+
+  const iw = cropImage.width * cropScale;
+  const ih = cropImage.height * cropScale;
+  const x = (cw - iw) / 2 + cropOffset.x;
+  const y = (ch - ih) / 2 + cropOffset.y;
+  ctx.drawImage(cropImage, x, y, iw, ih);
+}
+
+function openCropper(dataUrl) {
+  if (!avatarCropModal || !avatarCropCanvas) return;
+  cropImage = new Image();
+  cropImage.onload = () => {
+    cropScale = Math.max(avatarCropCanvas.width / cropImage.width, avatarCropCanvas.height / cropImage.height);
+    cropOffset = { x: 0, y: 0 };
+    if (avatarCropZoom) {
+      avatarCropZoom.value = "1";
+    }
+    drawCropper();
+    avatarCropModal.hidden = false;
+  };
+  cropImage.src = dataUrl;
+}
+
+function closeCropper() {
+  if (avatarCropModal) avatarCropModal.hidden = true;
+  cropImage = null;
+}
+
 function checkSwapNotice() {
   const flagKey = `swapNotice_${state.user.team}`;
   const show = localStorage.getItem(flagKey) === "true";
@@ -2256,8 +2305,7 @@ avatarUpload.addEventListener("change", (event) => {
   if (!file) return;
   const reader = new FileReader();
   reader.onload = () => {
-    localStorage.setItem("avatar", reader.result);
-    updateUserProfile();
+    openCropper(reader.result);
   };
   reader.readAsDataURL(file);
 });
@@ -2266,6 +2314,63 @@ removeAvatarBtn.addEventListener("click", () => {
   localStorage.removeItem("avatar");
   updateUserProfile();
 });
+
+if (avatarCropCanvas) {
+  avatarCropCanvas.addEventListener("mousedown", (event) => {
+    cropDragging = true;
+    cropStart = { x: event.clientX, y: event.clientY };
+    cropOffsetStart = { ...cropOffset };
+  });
+  window.addEventListener("mousemove", (event) => {
+    if (!cropDragging) return;
+    const dx = event.clientX - cropStart.x;
+    const dy = event.clientY - cropStart.y;
+    cropOffset = { x: cropOffsetStart.x + dx, y: cropOffsetStart.y + dy };
+    drawCropper();
+  });
+  window.addEventListener("mouseup", () => {
+    cropDragging = false;
+  });
+
+  avatarCropCanvas.addEventListener("touchstart", (event) => {
+    if (!event.touches[0]) return;
+    cropDragging = true;
+    cropStart = { x: event.touches[0].clientX, y: event.touches[0].clientY };
+    cropOffsetStart = { ...cropOffset };
+  });
+  window.addEventListener("touchmove", (event) => {
+    if (!cropDragging || !event.touches[0]) return;
+    const dx = event.touches[0].clientX - cropStart.x;
+    const dy = event.touches[0].clientY - cropStart.y;
+    cropOffset = { x: cropOffsetStart.x + dx, y: cropOffsetStart.y + dy };
+    drawCropper();
+  }, { passive: true });
+  window.addEventListener("touchend", () => {
+    cropDragging = false;
+  });
+}
+
+if (avatarCropZoom) {
+  avatarCropZoom.addEventListener("input", () => {
+    if (!cropImage) return;
+    const baseScale = Math.max(avatarCropCanvas.width / cropImage.width, avatarCropCanvas.height / cropImage.height);
+    cropScale = baseScale * Number(avatarCropZoom.value);
+    drawCropper();
+  });
+}
+
+if (applyAvatarCrop) {
+  applyAvatarCrop.addEventListener("click", () => {
+    if (!cropImage) return;
+    const dataUrl = avatarCropCanvas.toDataURL("image/png");
+    localStorage.setItem("avatar", dataUrl);
+    updateUserProfile();
+    closeCropper();
+  });
+}
+
+if (closeAvatarCrop) closeAvatarCrop.addEventListener("click", closeCropper);
+if (cancelAvatarCrop) cancelAvatarCrop.addEventListener("click", closeCropper);
 
 applyTemplateBtn.addEventListener("click", applyTemplateToMonth);
 templateGrid.addEventListener("change", updateTemplateFromInputs);
