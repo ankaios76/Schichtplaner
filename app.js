@@ -1822,7 +1822,7 @@ function renderUserDashboard() {
     body.className = "day-body";
     body.addEventListener("click", () => openDayModal(date));
 
-    for (let h = 0; h <= 24; h += 2) {
+    for (let h = 0; h <= 24; h += 1) {
       const label = document.createElement("div");
       label.className = "hour-label";
       label.style.top = `${(h / 24) * 100}%`;
