@@ -85,8 +85,8 @@ const pageAdminDashboard = document.getElementById("pageAdminDashboard");
 const pageUserDashboard = document.getElementById("pageUserDashboard");
 const userTeamCalendar = document.getElementById("userTeamCalendar");
 const userWeekLabel = document.getElementById("userWeekLabel");
-const userPrevMonth = document.getElementById("userPrevMonth");
-const userNextMonth = document.getElementById("userNextMonth");
+const userPrevPage = document.getElementById("userPrevPage");
+const userNextPage = document.getElementById("userNextPage");
 const teamCalendarGrid = document.getElementById("teamCalendarGrid");
 const teamCalendarLabel = document.getElementById("teamCalendarLabel");
 const teamCalendarPrev = document.getElementById("teamCalendarPrev");
@@ -210,7 +210,9 @@ const state = {
   memberDraft: null,
   pendingMember: null,
   pendingMemberSubmitting: false,
-  userMonthDate: new Date(),
+  userWeekStart: null,
+  userWeekOffset: 0,
+  userWeekPageSize: 1,
   teamCalendarDate: new Date(),
   settings: {},
 };
@@ -539,6 +541,14 @@ function initials(name) {
 
 function isSameDay(a, b) {
   return a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate();
+}
+
+function getWeekStart(date) {
+  const d = new Date(date);
+  const day = (d.getDay() + 6) % 7; // Monday = 0
+  d.setDate(d.getDate() - day);
+  d.setHours(0, 0, 0, 0);
+  return d;
 }
 
 function setActivePage(pageId) {
@@ -1048,8 +1058,7 @@ function updateWeeklyTotal() {
 
 async function refreshUserCalendar() {
   if (!state.user) return;
-  const base = state.user && state.user.role === "user" ? state.userMonthDate : state.calendarDate;
-  const date = new Date(base.getFullYear(), base.getMonth(), 1);
+  const date = new Date(state.calendarDate.getFullYear(), state.calendarDate.getMonth(), 1);
   const year = date.getFullYear();
   const month = date.getMonth();
   const from = new Date(year, month, 1);
@@ -1072,11 +1081,11 @@ async function refreshUserCalendar() {
 async function loadTeamWeekShifts() {
   if (!state.user) return;
   if (state.user.role === "user") {
-    const date = new Date(state.userMonthDate.getFullYear(), state.userMonthDate.getMonth(), 1);
-    const year = date.getFullYear();
-    const month = date.getMonth();
-    const fromKey = dateKey(new Date(year, month, 1));
-    const toKey = dateKey(new Date(year, month + 1, 0));
+    if (!state.userWeekStart) state.userWeekStart = getWeekStart(new Date());
+    const fromKey = dateKey(state.userWeekStart);
+    const end = new Date(state.userWeekStart);
+    end.setDate(end.getDate() + 6);
+    const toKey = dateKey(end);
     try {
       const shifts = await apiFetch(`/api/shifts?teamId=${state.user.team}&from=${fromKey}&to=${toKey}`);
       state.teamWeekShifts = shifts.reduce((acc, shift) => {
@@ -1751,79 +1760,94 @@ function renderUserDashboard() {
   const teamId = String(state.user.team || "unassigned");
   const members = state.members.filter((m) => String(m.team || "unassigned") === teamId);
 
-  const monthStart = new Date(state.userMonthDate.getFullYear(), state.userMonthDate.getMonth(), 1);
-  monthStart.setDate(1);
-  const year = monthStart.getFullYear();
-  const month = monthStart.getMonth();
-  const totalDays = new Date(year, month + 1, 0).getDate();
-  const startDay = (monthStart.getDay() + 6) % 7; // Monday = 0
+  if (!state.userWeekStart) state.userWeekStart = getWeekStart(new Date());
+  const weekStart = new Date(state.userWeekStart);
+  const days = Array.from({ length: 7 }, (_, i) => {
+    const d = new Date(weekStart);
+    d.setDate(weekStart.getDate() + i);
+    return d;
+  });
 
-  const days = [];
-  for (let i = 0; i < startDay; i += 1) {
-    const d = new Date(year, month, 1 - (startDay - i));
-    days.push(d);
-  }
-  for (let day = 1; day <= totalDays; day += 1) {
-    days.push(new Date(year, month, day));
-  }
-  while (days.length % 7 !== 0) {
-    const last = days[days.length - 1];
-    const next = new Date(last);
-    next.setDate(last.getDate() + 1);
-    days.push(next);
-  }
-
-  userWeekLabel.textContent = monthStart.toLocaleDateString("de-DE", { month: "long", year: "numeric" });
+  const startLabel = days[0].toLocaleDateString("de-DE");
+  const endLabel = days[6].toLocaleDateString("de-DE");
+  userWeekLabel.textContent = `${startLabel} – ${endLabel}`;
   userTeamCalendar.innerHTML = "";
   applyActivityOptionsToUI();
 
-  days.forEach((date) => {
+  const dayWidth = 260;
+  const containerWidth = userTeamCalendar.getBoundingClientRect().width || 780;
+  const daysPerPage = Math.max(1, Math.floor(containerWidth / dayWidth));
+  state.userWeekPageSize = daysPerPage;
+  const maxOffset = Math.max(0, 7 - daysPerPage);
+  state.userWeekOffset = Math.min(state.userWeekOffset, maxOffset);
+  const visibleDays = days.slice(state.userWeekOffset, state.userWeekOffset + daysPerPage);
+
+  if (userPrevPage) userPrevPage.disabled = state.userWeekOffset === 0;
+  if (userNextPage) userNextPage.disabled = state.userWeekOffset >= maxOffset;
+
+  visibleDays.forEach((date) => {
     const cell = document.createElement("div");
-    cell.className = "calendar-day";
-    const isCurrentMonth = date.getMonth() === month;
-    if (!isCurrentMonth) cell.classList.add("empty");
+    cell.className = "day-column";
     if (isSameDay(date, new Date())) cell.classList.add("today");
 
     const dayLabel = date.toLocaleDateString("de-DE", { weekday: "short", day: "2-digit", month: "short" });
-    cell.innerHTML = `<div class="date">${dayLabel}</div>`;
-    if (isCurrentMonth) {
-      cell.addEventListener("click", () => openDayModal(date));
+    const header = document.createElement("div");
+    header.className = "day-header";
+    header.textContent = dayLabel;
+    header.addEventListener("click", () => openDayModal(date));
+    const body = document.createElement("div");
+    body.className = "day-body";
+    body.addEventListener("click", () => openDayModal(date));
+
+    for (let h = 0; h <= 24; h += 2) {
+      const label = document.createElement("div");
+      label.className = "hour-label";
+      label.style.top = `${(h / 24) * 100}%`;
+      label.textContent = `${String(h).padStart(2, "0")}:00`;
+      body.appendChild(label);
     }
 
-    if (members.length === 0) {
-      cell.innerHTML += `<div class="hours muted">Keine Teammitglieder</div>`;
-    } else {
-      members.forEach((member) => {
-        const row = document.createElement("div");
-        row.className = "hours team-row";
-        const localKey = dateKey(date);
-        const entries = (state.teamWeekShifts[localKey] || []).filter(
-          (s) => s.userId === member.id
-        );
-        const segments = entries.length ? entries[0].segments : [];
-        const hasWork = segments.length > 0;
-        const totalMinutes = calculateDayTotal(segments);
-        const status = hasWork ? entries[0].status || "Support" : "Keine";
-        const timeLabel = hasWork ? `${formatSegments(segments)} (${formatHours(totalMinutes)})` : "Keine Arbeitszeit";
-        const holiday = getHoliday(date, member.state);
-        const holidayLabel = holiday ? ` · Feiertag: ${holiday}` : "";
-        row.textContent = `${member.name}: ${timeLabel} · ${status}${holidayLabel}`;
-        row.style.background = statusColor(status, segments.length > 0);
-        cell.appendChild(row);
+    members.forEach((member, idx) => {
+      const key = dateKey(date);
+      const entries = (state.teamWeekShifts[key] || []).filter((s) => s.userId === member.id);
+      if (!entries.length) return;
+      entries.forEach((entry) => {
+        const segments = entry.segments || [];
+        segments.forEach((seg) => {
+          const start = minutesBetween("00:00", seg.start);
+          const end = minutesBetween("00:00", seg.end);
+          if (end <= start) return;
+          const top = (start / 1440) * 100;
+          const height = ((end - start) / 1440) * 100;
+          const bar = document.createElement("div");
+          bar.className = "shift-bar";
+          bar.style.top = `${top}%`;
+          bar.style.height = `${height}%`;
+          bar.style.background = statusColor(entry.status || "Support", true);
+          bar.style.left = `${44 + (idx % 3) * 8}px`;
+          bar.style.right = "10px";
+          body.appendChild(bar);
+        });
+        if (segments.length) {
+          const first = segments[0];
+          const start = minutesBetween("00:00", first.start);
+          const top = (start / 1440) * 100;
+          const avatar = document.createElement("div");
+          avatar.className = "shift-avatar";
+          avatar.style.top = `calc(${top}% - 16px)`;
+          if (member.avatar) {
+            avatar.style.backgroundImage = `url(${member.avatar})`;
+            avatar.textContent = "";
+          } else {
+            avatar.textContent = initials(member.name);
+          }
+          body.appendChild(avatar);
+        }
       });
-    }
+    });
 
-    if (isCurrentMonth) {
-      const editBtn = document.createElement("button");
-      editBtn.className = "ghost";
-      editBtn.textContent = "Meinen Tag bearbeiten";
-      editBtn.addEventListener("click", (event) => {
-        event.stopPropagation();
-        openDayModal(date);
-      });
-      cell.appendChild(editBtn);
-    }
-
+    cell.appendChild(header);
+    cell.appendChild(body);
     userTeamCalendar.appendChild(cell);
   });
 }
@@ -2495,20 +2519,16 @@ nextMonthBtn.addEventListener("click", () => {
   refreshUserCalendar();
 });
 
-if (userPrevMonth) {
-  userPrevMonth.addEventListener("click", async () => {
-    state.userMonthDate.setMonth(state.userMonthDate.getMonth() - 1);
-    await refreshUserCalendar();
-    await loadTeamWeekShifts();
+if (userPrevPage) {
+  userPrevPage.addEventListener("click", () => {
+    state.userWeekOffset = Math.max(0, state.userWeekOffset - state.userWeekPageSize);
     renderUserDashboard();
   });
 }
 
-if (userNextMonth) {
-  userNextMonth.addEventListener("click", async () => {
-    state.userMonthDate.setMonth(state.userMonthDate.getMonth() + 1);
-    await refreshUserCalendar();
-    await loadTeamWeekShifts();
+if (userNextPage) {
+  userNextPage.addEventListener("click", () => {
+    state.userWeekOffset = Math.min(6, state.userWeekOffset + state.userWeekPageSize);
     renderUserDashboard();
   });
 }

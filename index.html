@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Schichtplaner</title>
-  <link rel="stylesheet" href="styles.css?v=20260220bc" />
+  <link rel="stylesheet" href="styles.css?v=20260220bd" />
 </head>
 <body>
   <div id="app">
@@ -257,18 +257,18 @@
         <section class="page" id="pageUserDashboard" hidden>
           <div class="page-header">
             <h3>Team-Kalender</h3>
-            <p class="muted">Übersicht des gesamten Monats (inkl. Bereitschaften).</p>
+            <p class="muted">Übersicht der aktuellen Arbeitswoche (Mo–So).</p>
           </div>
           <div class="card">
             <div class="card-row">
               <div class="card-title" id="userWeekLabel"></div>
               <div class="month-nav">
-                <button class="ghost" id="userPrevMonth">←</button>
-                <button class="ghost" id="userNextMonth">→</button>
+                <button class="ghost" id="userPrevPage">←</button>
+                <button class="ghost" id="userNextPage">→</button>
               </div>
             </div>
             <div class="legend" id="statusLegend"></div>
-            <div class="calendar-grid" id="userTeamCalendar"></div>
+            <div class="week-timeline" id="userTeamCalendar"></div>
           </div>
         </section>
 
@@ -755,6 +755,6 @@
     </div>
   </div>
 
-  <script src="app.js?v=20260220bc"></script>
+  <script src="app.js?v=20260220bd"></script>
 </body>
 </html>

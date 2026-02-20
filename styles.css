@@ -335,6 +335,70 @@ button.ghost {
   box-shadow: 0 0 0 2px rgba(139, 15, 58, 0.1);
 }
 
+.week-timeline {
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: minmax(240px, 1fr);
+  gap: 16px;
+}
+
+.day-column {
+  border: 1px solid #e7eaee;
+  border-radius: 16px;
+  overflow: hidden;
+  background: #fff;
+}
+
+.day-header {
+  padding: 10px 14px;
+  background: #f7f8fa;
+  font-weight: 600;
+}
+
+.day-body {
+  position: relative;
+  height: 960px; /* 24h * 40px */
+  background: repeating-linear-gradient(
+    to bottom,
+    #f5f6f7,
+    #f5f6f7 39px,
+    #e9edf0 40px
+  );
+  padding-left: 40px;
+}
+
+.hour-label {
+  position: absolute;
+  left: 6px;
+  font-size: 0.75rem;
+  color: var(--muted);
+}
+
+.shift-bar {
+  position: absolute;
+  left: 44px;
+  right: 10px;
+  border-radius: 10px;
+  opacity: 0.85;
+}
+
+.shift-avatar {
+  position: absolute;
+  left: 6px;
+  width: 32px;
+  height: 32px;
+  border-radius: 12px;
+  background: #fff;
+  color: var(--accent);
+  display: grid;
+  place-items: center;
+  font-weight: 700;
+  border: 1px solid #e1e5e8;
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+}
+
 .card-action {
   color: var(--muted);
 }
