@@ -270,6 +270,12 @@ function dateKeyUtc(date) {
   return date.toISOString().split("T")[0];
 }
 
+function normalizeDateKey(value) {
+  if (!value) return "";
+  if (typeof value === "string") return value.split("T")[0];
+  return dateKey(new Date(value));
+}
+
 function getEntryForDate(map, date) {
   const localKey = dateKey(date);
   if (map[localKey]) return map[localKey];
@@ -762,7 +768,7 @@ async function refreshUserCalendar() {
     const shifts = await apiFetch(`/api/shifts?userId=${state.user.memberId}&from=${fromKey}&to=${toKey}`);
     state.dayEntries = {};
     shifts.forEach((shift) => {
-      const key = dateKey(new Date(shift.date));
+      const key = normalizeDateKey(shift.date);
       state.dayEntries[key] = { segments: shift.segments, status: shift.status || "Support" };
     });
     renderCalendar();
@@ -781,7 +787,7 @@ async function loadTeamWeekShifts() {
   try {
     const shifts = await apiFetch(`/api/shifts?teamId=${state.user.team}&from=${fromKey}&to=${toKey}`);
     state.teamWeekShifts = shifts.reduce((acc, shift) => {
-      const key = dateKey(new Date(shift.date));
+      const key = normalizeDateKey(shift.date);
       acc[key] = acc[key] || [];
       acc[key].push({ ...shift, date: key });
       return acc;
