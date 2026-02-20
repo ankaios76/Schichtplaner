@@ -7,6 +7,7 @@ DB_PATH="$ROOT_DIR/server/data.db"
 
 COMPANY_NAME="${COMPANY_NAME:-}"
 COMPANY_LOGO="${COMPANY_LOGO:-}"
+TMP_LOGO=""
 
 if [ -z "$COMPANY_NAME" ] && [ -f "$DB_PATH" ] && command -v sqlite3 >/dev/null 2>&1; then
   COMPANY_NAME=$(sqlite3 "$DB_PATH" "select company_name from settings where id=1;" | tr -d '\r' || true)
@@ -18,6 +19,30 @@ fi
 
 if [ -z "$COMPANY_LOGO" ] && [ -f "$DOCS_DIR/company-logo.png" ]; then
   COMPANY_LOGO="$DOCS_DIR/company-logo.png"
+fi
+
+if [ -z "$COMPANY_LOGO" ] && [ -f "$DB_PATH" ] && command -v sqlite3 >/dev/null 2>&1; then
+  LOGO_DATA=$(sqlite3 "$DB_PATH" "select logo from settings where id=1;" | tr -d '\r' || true)
+  case "$LOGO_DATA" in
+    data:image/*\;base64,*)
+    TMP_LOGO="$(mktemp --suffix=.png)"
+    python3 - <<'PY'
+import os, sys, base64
+data = os.environ.get("LOGO_DATA","")
+if ";base64," in data:
+  b64 = data.split(";base64,",1)[1]
+  try:
+    raw = base64.b64decode(b64)
+    path = os.environ.get("TMP_LOGO","")
+    if path:
+      with open(path,"wb") as f:
+        f.write(raw)
+  except Exception:
+    pass
+PY
+    COMPANY_LOGO="$TMP_LOGO"
+    ;;
+  esac
 fi
 
 if ! command -v pandoc >/dev/null 2>&1; then
@@ -61,5 +86,9 @@ build_pdf() {
 build_pdf "supervisor"
 build_pdf "teamleiter"
 build_pdf "benutzer"
+
+if [ -n "$TMP_LOGO" ] && [ -f "$TMP_LOGO" ]; then
+  rm -f "$TMP_LOGO"
+fi
 
 echo "PDFs generated in $DOCS_DIR"
