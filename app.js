@@ -1489,8 +1489,7 @@ async function downloadShiftPlan() {
   let from;
   let to;
   if (mode === "week") {
-    const base = printDate && printDate.value ? new Date(printDate.value) : new Date();
-    const start = getWeekStart(base);
+    const start = printDate && printDate.value ? new Date(printDate.value) : new Date();
     const end = new Date(start);
     end.setDate(end.getDate() + 6);
     from = dateKeyFromDate(start);
