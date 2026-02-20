@@ -343,12 +343,10 @@ if (BOOTSTRAP_MODE) {
   app.listen(PORT, () => {
     console.log(`Bootstrap API listening on ${PORT}`);
   });
-  return;
-}
+} else {
+  await initDb();
 
-await initDb();
-
-app.post("/api/login", async (req, res) => {
+  app.post("/api/login", async (req, res) => {
   const { username, password } = req.body || {};
   if (!username || !password) return res.status(400).json({ error: "Missing credentials" });
 
@@ -376,7 +374,7 @@ app.post("/api/login", async (req, res) => {
   });
 });
 
-app.get("/api/settings", async (req, res) => {
+  app.get("/api/settings", async (req, res) => {
   const rows = await query("SELECT company_name, logo FROM settings WHERE id = 1", []);
   const row = rows[0] || {};
   res.json({
@@ -386,14 +384,14 @@ app.get("/api/settings", async (req, res) => {
   });
 });
 
-app.post("/api/settings", async (req, res) => {
+  app.post("/api/settings", async (req, res) => {
   const { companyName, logo } = req.body || {};
   if (!companyName) return res.status(400).json({ error: "Missing company name" });
   await execute("UPDATE settings SET company_name = ?, logo = ? WHERE id = 1", [companyName, logo || null]);
   res.json({ ok: true });
 });
 
-app.post("/api/setup", async (req, res) => {
+  app.post("/api/setup", async (req, res) => {
   const { name, username, password, state } = req.body || {};
   if (!username || !password) return res.status(400).json({ error: "Missing credentials" });
   if (await hasSupervisor()) return res.status(409).json({ error: "Supervisor exists" });
@@ -405,12 +403,12 @@ app.post("/api/setup", async (req, res) => {
   res.json({ ok: true });
 });
 
-app.get("/api/hierarchy", async (req, res) => {
+  app.get("/api/hierarchy", async (req, res) => {
   const rows = await query("SELECT * FROM hierarchy_nodes", []);
   res.json(buildTree(rows));
 });
 
-app.post("/api/hierarchy", async (req, res) => {
+  app.post("/api/hierarchy", async (req, res) => {
   const { parentId, type, name } = req.body || {};
   if (!type || !name) return res.status(400).json({ error: "Missing fields" });
   const sortRows = await query("SELECT COALESCE(MAX(sort_order), 0) + 1 as next FROM hierarchy_nodes WHERE parent_id IS ?", [
@@ -424,28 +422,28 @@ app.post("/api/hierarchy", async (req, res) => {
   res.json({ ok: true });
 });
 
-app.put("/api/hierarchy/:id", async (req, res) => {
+  app.put("/api/hierarchy/:id", async (req, res) => {
   const { name } = req.body || {};
   if (!name) return res.status(400).json({ error: "Missing name" });
   await execute("UPDATE hierarchy_nodes SET name = ? WHERE id = ?", [name, Number(req.params.id)]);
   res.json({ ok: true });
 });
 
-app.delete("/api/hierarchy/:id", async (req, res) => {
+  app.delete("/api/hierarchy/:id", async (req, res) => {
   const id = Number(req.params.id);
   await execute("DELETE FROM hierarchy_nodes WHERE id = ?", [id]);
   await execute("UPDATE hierarchy_nodes SET parent_id = NULL WHERE parent_id = ?", [id]);
   res.json({ ok: true });
 });
 
-app.post("/api/hierarchy/move", async (req, res) => {
+  app.post("/api/hierarchy/move", async (req, res) => {
   const { sourceId, targetId } = req.body || {};
   if (!sourceId || !targetId) return res.status(400).json({ error: "Missing ids" });
   await execute("UPDATE hierarchy_nodes SET parent_id = ? WHERE id = ?", [targetId, sourceId]);
   res.json({ ok: true });
 });
 
-app.get("/api/users", async (req, res) => {
+  app.get("/api/users", async (req, res) => {
   const rows = await query(
     "SELECT id, name, username, system_role, team, status, role_title, email, phone, state FROM users",
     []
@@ -466,7 +464,7 @@ app.get("/api/users", async (req, res) => {
   );
 });
 
-app.post("/api/users", async (req, res) => {
+  app.post("/api/users", async (req, res) => {
   const { name, username, password, systemRole, team, status, role, email, phone, state } = req.body || {};
   if (!name || !username || !password || !systemRole || !team || !status) {
     return res.status(400).json({ error: "Missing fields" });
@@ -484,7 +482,7 @@ app.post("/api/users", async (req, res) => {
   }
 });
 
-app.put("/api/users/:id", async (req, res) => {
+  app.put("/api/users/:id", async (req, res) => {
   const id = Number(req.params.id);
   const { name, username, password, systemRole, team, status, role, email, phone, state } = req.body || {};
   const rows = await query("SELECT id FROM users WHERE id = ?", [id]);
@@ -520,18 +518,18 @@ app.put("/api/users/:id", async (req, res) => {
   res.json({ ok: true });
 });
 
-app.delete("/api/users/:id", async (req, res) => {
+  app.delete("/api/users/:id", async (req, res) => {
   const id = Number(req.params.id);
   await execute("DELETE FROM users WHERE id = ?", [id]);
   res.json({ ok: true });
 });
 
-app.get("/api/swaps", async (req, res) => {
+  app.get("/api/swaps", async (req, res) => {
   const rows = await query("SELECT * FROM swaps ORDER BY created_at DESC", []);
   res.json(rows);
 });
 
-app.post("/api/swaps", async (req, res) => {
+  app.post("/api/swaps", async (req, res) => {
   const { requester, team, date, reason, status } = req.body || {};
   if (!requester || !team || !date) return res.status(400).json({ error: "Missing fields" });
   await execute(
@@ -541,7 +539,7 @@ app.post("/api/swaps", async (req, res) => {
   res.json({ ok: true });
 });
 
-app.put("/api/swaps/:id", async (req, res) => {
+  app.put("/api/swaps/:id", async (req, res) => {
   const id = Number(req.params.id);
   const { status } = req.body || {};
   if (!status) return res.status(400).json({ error: "Missing status" });
@@ -549,7 +547,7 @@ app.put("/api/swaps/:id", async (req, res) => {
   res.json({ ok: true });
 });
 
-app.get("/api/shifts", async (req, res) => {
+  app.get("/api/shifts", async (req, res) => {
   const { userId, teamId, from, to } = req.query || {};
   if (!from || !to) return res.status(400).json({ error: "Missing range" });
 
@@ -590,7 +588,7 @@ app.get("/api/shifts", async (req, res) => {
   return res.status(400).json({ error: "Missing filter" });
 });
 
-app.post("/api/shifts", async (req, res) => {
+  app.post("/api/shifts", async (req, res) => {
   const { userId, date, segments, status } = req.body || {};
   if (!userId || !date || !segments) return res.status(400).json({ error: "Missing fields" });
   const json = JSON.stringify(segments);
@@ -611,13 +609,14 @@ app.post("/api/shifts", async (req, res) => {
   res.json({ ok: true });
 });
 
-app.delete("/api/shifts", async (req, res) => {
+  app.delete("/api/shifts", async (req, res) => {
   const { userId, date } = req.body || {};
   if (!userId || !date) return res.status(400).json({ error: "Missing fields" });
   await execute("DELETE FROM shifts WHERE user_id = ? AND date = ?", [Number(userId), date]);
   res.json({ ok: true });
 });
 
-app.listen(PORT, () => {
-  console.log(`API listening on ${PORT}`);
-});
+  app.listen(PORT, () => {
+    console.log(`API listening on ${PORT}`);
+  });
+}
