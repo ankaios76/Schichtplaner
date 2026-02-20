@@ -243,6 +243,17 @@ const menus = {
 const weekdayLabels = ["Mo", "Di", "Mi", "Do", "Fr", "Sa", "So"];
 let holidayOverrides = {};
 
+const menuIcons = {
+  dashboard: `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 11l9-7 9 7v9a1 1 0 0 1-1 1h-5v-7H9v7H4a1 1 0 0 1-1-1v-9z" /></svg>`,
+  hierarchy: `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 4h6v6H4zM14 4h6v6h-6zM9 14h6v6H9zM7 10h10v2H7zM12 12v2" /></svg>`,
+  settings: `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 8.5a3.5 3.5 0 1 0 0 7 3.5 3.5 0 0 0 0-7zm8.5 3.5l-2 1 .2 2.2-2.2.8-1.2 1.9-2.2-.7-1.6 1.6-1.6-1.6-2.2.7-1.2-1.9-2.2-.8.2-2.2-2-1 2-1-.2-2.2 2.2-.8 1.2-1.9 2.2.7 1.6-1.6 1.6 1.6 2.2-.7 1.2 1.9 2.2.8-.2 2.2 2 1z" /></svg>`,
+  team: `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 12a3 3 0 1 0-3-3 3 3 0 0 0 3 3zm10 0a3 3 0 1 0-3-3 3 3 0 0 0 3 3zM3 20a4 4 0 0 1 8 0zM13 20a4 4 0 0 1 8 0z" /></svg>`,
+  "team-calendar": `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 2v3M17 2v3M3 8h18M5 6h14a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2z" /></svg>`,
+  user: `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 12a4 4 0 1 0-4-4 4 4 0 0 0 4 4zm-7 9a7 7 0 0 1 14 0z" /></svg>`,
+  profile: `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 12a4 4 0 1 0-4-4 4 4 0 0 0 4 4zm-7 9a7 7 0 0 1 14 0z" /></svg>`,
+  swap: `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 7h9l-2-2M17 17H8l2 2M7 7l-2 2m12 8l2-2" /></svg>`,
+};
+
 function setAccentColor(color) {
   if (!color) return;
   const hex = color.replace("#", "");
@@ -596,7 +607,8 @@ function renderMenu(role) {
   menuList.innerHTML = "";
   menus[role].forEach((item) => {
     const btn = document.createElement("button");
-    btn.textContent = item.label;
+    const icon = menuIcons[item.id] || "";
+    btn.innerHTML = `${icon}<span>${item.label}</span>`;
     btn.dataset.page = item.id;
     btn.addEventListener("click", () => setActivePage(item.id));
     menuList.appendChild(btn);
