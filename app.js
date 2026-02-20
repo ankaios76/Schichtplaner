@@ -170,6 +170,9 @@ const holidayRemove = document.getElementById("holidayRemove");
 const holidayList = document.getElementById("holidayList");
 const holidayViewState = document.getElementById("holidayViewState");
 const holidayComputedList = document.getElementById("holidayComputedList");
+const activityInput = document.getElementById("activityInput");
+const activityAdd = document.getElementById("activityAdd");
+const activityList = document.getElementById("activityList");
 const teamModal = document.getElementById("teamModal");
 const closeTeamModal = document.getElementById("closeTeamModal");
 const cancelTeam = document.getElementById("cancelTeam");
@@ -375,6 +378,19 @@ const statusColors = {
   "Rufbereitschaft Fraud": "#ffe3f2",
   Keine: "#eeeeee",
 };
+
+const defaultActivityOptions = [
+  "Support",
+  "Projekt",
+  "Betriebsrat",
+  "Urlaub",
+  "Urlaub halber Tag",
+  "Krank",
+  "Rufbereitschaft Voice/Daten",
+  "Rufbereitschaft Fraud",
+];
+
+let activityOptions = [...defaultActivityOptions];
 
 function statusColor(status, hasSegments) {
   if (!hasSegments) return statusColors.Keine;
@@ -647,12 +663,37 @@ function renderComputedHolidays() {
     : `<div class="muted">Keine Feiertage gefunden.</div>`;
 }
 
+function renderActivityOptions() {
+  if (!activityList) return;
+  activityList.innerHTML = activityOptions
+    .map(
+      (name) =>
+        `<div class="template-day"><strong>${name}</strong><button class="ghost" data-remove="${name}">Entfernen</button></div>`
+    )
+    .join("");
+}
+
+function applyActivityOptionsToUI() {
+  if (!dayStatus) return;
+  const selected = dayStatus.value;
+  dayStatus.innerHTML = activityOptions.map((opt) => `<option value="${opt}">${opt}</option>`).join("");
+  dayStatus.value = selected && activityOptions.includes(selected) ? selected : activityOptions[0] || "Support";
+  statusLegend.innerHTML = activityOptions
+    .map(
+      (label) =>
+        `<div class="legend-item"><span class="legend-swatch" style="background:${statusColors[label] || statusColors.Support}"></span>${label}</div>`
+    )
+    .join("") +
+    `<div class="legend-item"><span class="legend-swatch" style="background:${statusColors.Keine}"></span>Keine Arbeitszeit</div>`;
+}
+
 async function saveSettingsWithLogo(logoData) {
   const payload = {
     companyName: settingsCompany.value.trim(),
     logo: logoData !== null ? logoData : (state.settings.logo || null),
     accent: settingsAccent.value || null,
     holidayOverrides,
+    activityOptions,
   };
   await apiFetch("/api/settings", {
     method: "POST",
@@ -1047,8 +1088,9 @@ function openDayModal(date) {
   const entry = state.dayEntries[state.selectedDateKey] || { segments: [{ start: "07:00", end: "15:30" }], status: "Support" };
   state.modalSegments = (entry.segments || []).map((seg) => ({ ...seg }));
   const normalized = (entry.status || "Support").trim();
+  applyActivityOptionsToUI();
   dayStatus.value = normalized;
-  if (!dayStatus.value) dayStatus.value = "Support";
+  if (!dayStatus.value) dayStatus.value = activityOptions[0] || "Support";
   const holiday = getHoliday(date, state.user.state);
   holidayNotice.textContent = holiday ? `Feiertag: ${holiday}` : "";
   renderSegments();
@@ -1641,14 +1683,7 @@ function renderUserDashboard() {
 
   userWeekLabel.textContent = monthStart.toLocaleDateString("de-DE", { month: "long", year: "numeric" });
   userTeamCalendar.innerHTML = "";
-  statusLegend.innerHTML = Object.entries(statusColors)
-    .filter(([key]) => key !== "Keine")
-    .map(
-      ([label, color]) =>
-        `<div class="legend-item"><span class="legend-swatch" style="background:${color}"></span>${label}</div>`
-    )
-    .join("") +
-    `<div class="legend-item"><span class="legend-swatch" style="background:${statusColors.Keine}"></span>Keine Arbeitszeit</div>`;
+  applyActivityOptionsToUI();
 
   days.forEach((date) => {
     const cell = document.createElement("div");
@@ -1844,6 +1879,7 @@ function handleLogin(event) {
           renderComputedHolidays();
         }
         renderHolidayOverrides();
+        renderActivityOptions();
       }
       renderAdminDashboard();
     })
@@ -1883,6 +1919,9 @@ async function initSetup() {
     return;
   }
   holidayOverrides = settings.holidayOverrides || {};
+  if (settings.activityOptions && Array.isArray(settings.activityOptions) && settings.activityOptions.length) {
+    activityOptions = settings.activityOptions;
+  }
   if (companyAccent && settings.accent) companyAccent.value = settings.accent;
   setCompanyBranding(settings);
   if (!settings?.hasSupervisor) {
@@ -2058,6 +2097,31 @@ if (holidayRemove) {
     holidayOverrides[state][date] = null;
     await saveSettingsWithLogo(null);
     renderHolidayOverrides();
+  });
+}
+
+if (activityAdd) {
+  activityAdd.addEventListener("click", async () => {
+    const name = (activityInput.value || "").trim();
+    if (!name) return;
+    if (!activityOptions.includes(name)) activityOptions.push(name);
+    activityInput.value = "";
+    await saveSettingsWithLogo(null);
+    renderActivityOptions();
+    applyActivityOptionsToUI();
+  });
+}
+
+if (activityList) {
+  activityList.addEventListener("click", async (event) => {
+    const btn = event.target.closest("button");
+    if (!btn || !btn.dataset.remove) return;
+    const name = btn.dataset.remove;
+    activityOptions = activityOptions.filter((opt) => opt !== name);
+    if (!activityOptions.length) activityOptions = [...defaultActivityOptions];
+    await saveSettingsWithLogo(null);
+    renderActivityOptions();
+    applyActivityOptionsToUI();
   });
 }
 

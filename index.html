@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Schichtplaner</title>
-  <link rel="stylesheet" href="styles.css?v=20260220ah" />
+  <link rel="stylesheet" href="styles.css?v=20260220ai" />
 </head>
 <body>
   <div id="app">
@@ -373,6 +373,19 @@
               </label>
               <div class="template-grid" id="holidayComputedList"></div>
             </div>
+
+            <div class="card">
+              <div class="card-title">Tätigkeiten</div>
+              <p class="muted">Diese Einträge stehen in der Tätigkeitsauswahl zur Verfügung.</p>
+              <label class="field">
+                <span>Neue Tätigkeit</span>
+                <input id="activityInput" type="text" placeholder="z. B. Schulung" />
+              </label>
+              <div class="field-row">
+                <button class="ghost" id="activityAdd">Hinzufügen</button>
+              </div>
+              <div class="template-grid" id="activityList"></div>
+            </div>
           </div>
         </section>
 
@@ -713,6 +726,6 @@
     </div>
   </div>
 
-  <script src="app.js?v=20260220ah"></script>
+  <script src="app.js?v=20260220ai"></script>
 </body>
 </html>
