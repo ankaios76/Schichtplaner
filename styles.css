@@ -381,6 +381,19 @@ button.ghost {
   opacity: 0.9;
 }
 
+.core-line {
+  position: absolute;
+  left: 40px;
+  right: 8px;
+  height: 2px;
+  background: var(--accent);
+  opacity: 0.55;
+}
+
+.core-line.core-end {
+  opacity: 0.75;
+}
+
 .shift-avatar {
   position: absolute;
   left: 6px;

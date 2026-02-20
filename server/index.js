@@ -57,7 +57,9 @@ async function createSchemaWith(client, execFn) {
         parent_id INTEGER,
         type TEXT NOT NULL,
         name TEXT NOT NULL,
-        sort_order INTEGER NOT NULL DEFAULT 0
+        sort_order INTEGER NOT NULL DEFAULT 0,
+        core_start TEXT,
+        core_end TEXT
       );
       CREATE TABLE IF NOT EXISTS swaps (
         id SERIAL PRIMARY KEY,
@@ -109,6 +111,17 @@ async function createSchemaWith(client, execFn) {
     await execFn(`
       DO $$
       BEGIN
+        IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='hierarchy_nodes' AND column_name='core_start') THEN
+          ALTER TABLE hierarchy_nodes ADD COLUMN core_start TEXT;
+        END IF;
+        IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='hierarchy_nodes' AND column_name='core_end') THEN
+          ALTER TABLE hierarchy_nodes ADD COLUMN core_end TEXT;
+        END IF;
+      END $$;
+    `);
+    await execFn(`
+      DO $$
+      BEGIN
         IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='users' AND column_name='avatar') THEN
           ALTER TABLE users ADD COLUMN avatar TEXT;
         END IF;
@@ -139,7 +152,9 @@ async function createSchemaWith(client, execFn) {
       parent_id INT NULL,
       type VARCHAR(50) NOT NULL,
       name VARCHAR(255) NOT NULL,
-      sort_order INT NOT NULL DEFAULT 0
+      sort_order INT NOT NULL DEFAULT 0,
+      core_start VARCHAR(16),
+      core_end VARCHAR(16)
     );
   `);
   await execFn(`
@@ -186,6 +201,12 @@ async function createSchemaWith(client, execFn) {
   } catch {}
   try {
     await execFn("ALTER TABLE settings ADD COLUMN IF NOT EXISTS footer_text TEXT");
+  } catch {}
+  try {
+    await execFn("ALTER TABLE hierarchy_nodes ADD COLUMN IF NOT EXISTS core_start VARCHAR(16)");
+  } catch {}
+  try {
+    await execFn("ALTER TABLE hierarchy_nodes ADD COLUMN IF NOT EXISTS core_end VARCHAR(16)");
   } catch {}
   try {
     await execFn("ALTER TABLE users ADD COLUMN IF NOT EXISTS avatar LONGTEXT");
@@ -521,10 +542,22 @@ app.post("/api/hierarchy", async (req, res) => {
   res.json({ ok: true });
 });
 
-  app.put("/api/hierarchy/:id", async (req, res) => {
-  const { name } = req.body || {};
-  if (!name) return res.status(400).json({ error: "Missing name" });
-  await execute("UPDATE hierarchy_nodes SET name = ? WHERE id = ?", [name, Number(req.params.id)]);
+app.put("/api/hierarchy/:id", async (req, res) => {
+  const { name, coreStart, coreEnd } = req.body || {};
+  const id = Number(req.params.id);
+  const rows = await query("SELECT id, type FROM hierarchy_nodes WHERE id = ?", [id]);
+  if (!rows[0]) return res.status(404).json({ error: "Not found" });
+
+  if (name) {
+    await execute("UPDATE hierarchy_nodes SET name = ? WHERE id = ?", [name, id]);
+  }
+  if (rows[0].type === "team" && (coreStart || coreEnd)) {
+    await execute("UPDATE hierarchy_nodes SET core_start = ?, core_end = ? WHERE id = ?", [
+      coreStart || null,
+      coreEnd || null,
+      id,
+    ]);
+  }
   res.json({ ok: true });
 });
 

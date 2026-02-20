@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Schichtplaner</title>
-  <link rel="stylesheet" href="styles.css?v=20260220bg" />
+  <link rel="stylesheet" href="styles.css?v=20260220bh" />
 </head>
 <body>
   <div id="app">
@@ -298,7 +298,7 @@
         <section class="page" id="pageTeamCalendar" hidden>
           <div class="page-header">
             <h3>Teamkalender</h3>
-            <p class="muted">Monatsansicht des Teams (inkl. Bereitschaften).</p>
+            <p class="muted">Übersicht der aktuellen Arbeitswoche (Mo–So).</p>
           </div>
           <div class="card">
             <div class="card-row">
@@ -308,8 +308,13 @@
                 <button class="ghost" id="teamCalendarNext">→</button>
               </div>
             </div>
+            <div class="month-nav" id="teamCalendarDayPager">
+              <button class="ghost" id="teamCalendarPrevDay">‹</button>
+              <div class="muted">Tage</div>
+              <button class="ghost" id="teamCalendarNextDay">›</button>
+            </div>
             <div class="legend" id="teamCalendarLegend"></div>
-            <div class="calendar-grid" id="teamCalendarGrid"></div>
+            <div class="week-timeline" id="teamCalendarGrid"></div>
           </div>
         </section>
 
@@ -414,6 +419,21 @@
               <button class="ghost" id="addTeam">+ Team anlegen</button>
               <button class="primary" id="addMember">+ Benutzer hinzufügen</button>
             </div>
+          </div>
+          <div class="card" id="teamCoreCard">
+            <div class="card-title">Kernarbeitszeit (Team)</div>
+            <div class="field-row">
+              <label class="field inline">
+                <span>Von</span>
+                <input id="teamCoreStart" type="time" />
+              </label>
+              <label class="field inline">
+                <span>Bis</span>
+                <input id="teamCoreEnd" type="time" />
+              </label>
+              <button class="primary" id="teamCoreSave">Speichern</button>
+            </div>
+            <div class="muted">Gilt für die Teamkalender-Ansicht.</div>
           </div>
           <div class="team-grid" id="teamList"></div>
           <div class="card swap-requests" id="swapRequestsCard">
@@ -760,6 +780,6 @@
     </div>
   </div>
 
-  <script src="app.js?v=20260220bg"></script>
+  <script src="app.js?v=20260220bh"></script>
 </body>
 </html>

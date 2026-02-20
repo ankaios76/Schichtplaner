@@ -95,6 +95,13 @@ const teamCalendarLabel = document.getElementById("teamCalendarLabel");
 const teamCalendarPrev = document.getElementById("teamCalendarPrev");
 const teamCalendarNext = document.getElementById("teamCalendarNext");
 const teamCalendarLegend = document.getElementById("teamCalendarLegend");
+const teamCalendarPrevDay = document.getElementById("teamCalendarPrevDay");
+const teamCalendarNextDay = document.getElementById("teamCalendarNextDay");
+const teamCalendarDayPager = document.getElementById("teamCalendarDayPager");
+const teamCoreCard = document.getElementById("teamCoreCard");
+const teamCoreStart = document.getElementById("teamCoreStart");
+const teamCoreEnd = document.getElementById("teamCoreEnd");
+const teamCoreSave = document.getElementById("teamCoreSave");
 const statusLegend = document.getElementById("statusLegend");
 const adminTeamList = document.getElementById("adminTeamList");
 const adminSwapList = document.getElementById("adminSwapList");
@@ -216,7 +223,9 @@ const state = {
   userWeekStart: null,
   userWeekOffset: 0,
   userWeekPageSize: 1,
-  teamCalendarDate: new Date(),
+  teamCalendarWeekStart: null,
+  teamCalendarWeekOffset: 0,
+  teamCalendarWeekPageSize: 1,
   settings: {},
 };
 
@@ -592,65 +601,124 @@ function renderTeamCalendar() {
   const teamId = String(state.user.team || "unassigned");
   const members = state.members.filter((m) => String(m.team || "unassigned") === teamId);
 
-  const monthStart = new Date(state.teamCalendarDate.getFullYear(), state.teamCalendarDate.getMonth(), 1);
-  const year = monthStart.getFullYear();
-  const month = monthStart.getMonth();
-  const totalDays = new Date(year, month + 1, 0).getDate();
-  const startDay = (monthStart.getDay() + 6) % 7;
+  if (!state.teamCalendarWeekStart) state.teamCalendarWeekStart = getWeekStart(new Date());
+  const weekStart = new Date(state.teamCalendarWeekStart);
+  const days = Array.from({ length: 7 }, (_, i) => {
+    const d = new Date(weekStart);
+    d.setDate(weekStart.getDate() + i);
+    return d;
+  });
 
-  const days = [];
-  for (let i = 0; i < startDay; i += 1) {
-    const d = new Date(year, month, 1 - (startDay - i));
-    days.push(d);
-  }
-  for (let day = 1; day <= totalDays; day += 1) {
-    days.push(new Date(year, month, day));
-  }
-  while (days.length % 7 !== 0) {
-    const last = days[days.length - 1];
-    const next = new Date(last);
-    next.setDate(last.getDate() + 1);
-    days.push(next);
-  }
-
-  teamCalendarLabel.textContent = monthStart.toLocaleDateString("de-DE", { month: "long", year: "numeric" });
-  teamCalendarLegend.innerHTML = Object.entries(statusColors)
-    .filter(([key]) => key !== "Keine")
-    .map(
-      ([label, color]) =>
-        `<div class="legend-item"><span class="legend-swatch" style="background:${color}"></span>${label}</div>`
-    )
-    .join("") +
+  const startLabel = days[0].toLocaleDateString("de-DE");
+  const endLabel = days[6].toLocaleDateString("de-DE");
+  teamCalendarLabel.textContent = `${startLabel} – ${endLabel}`;
+  teamCalendarLegend.innerHTML =
+    activityOptions
+      .map(
+        (opt) =>
+          `<div class="legend-item"><span class="legend-swatch" style="background:${opt.color || statusColors.Support}"></span>${opt.name}</div>`
+      )
+      .join("") +
     `<div class="legend-item"><span class="legend-swatch" style="background:${statusColors.Keine}"></span>Keine Arbeitszeit</div>`;
 
   teamCalendarGrid.innerHTML = "";
+
+  const dayWidth = 260;
+  const containerWidth = teamCalendarGrid.getBoundingClientRect().width || 780;
+  const daysPerPage = Math.max(1, Math.floor(containerWidth / dayWidth));
+  state.teamCalendarWeekPageSize = daysPerPage;
+  const maxOffset = Math.max(0, 7 - daysPerPage);
+  state.teamCalendarWeekOffset = Math.min(state.teamCalendarWeekOffset, maxOffset);
+  const visibleDays = days.slice(state.teamCalendarWeekOffset, state.teamCalendarWeekOffset + daysPerPage);
+
+  if (teamCalendarDayPager) teamCalendarDayPager.hidden = maxOffset === 0;
+  if (teamCalendarPrevDay) teamCalendarPrevDay.disabled = state.teamCalendarWeekOffset === 0;
+  if (teamCalendarNextDay) teamCalendarNextDay.disabled = state.teamCalendarWeekOffset >= maxOffset;
+
+  const usersWithShifts = new Map();
   days.forEach((date) => {
+    const key = dateKey(date);
+    (state.teamWeekShifts[key] || []).forEach((entry) => {
+      if (!usersWithShifts.has(entry.userId)) {
+        const member = members.find((m) => m.id === entry.userId);
+        usersWithShifts.set(entry.userId, {
+          id: entry.userId,
+          name: entry.name || (member ? member.name : "Unbekannt"),
+          avatar: member ? member.avatar : null,
+        });
+      }
+    });
+  });
+
+  const userList = Array.from(usersWithShifts.values()).sort((a, b) => a.name.localeCompare(b.name));
+  const columnWidth = 28;
+  const core = getCurrentTeamCore();
+
+  visibleDays.forEach((date) => {
     const cell = document.createElement("div");
-    cell.className = "calendar-day";
-    const isCurrentMonth = date.getMonth() === month;
-    if (!isCurrentMonth) cell.classList.add("empty");
+    cell.className = "day-column";
     if (isSameDay(date, new Date())) cell.classList.add("today");
 
     const dayLabel = date.toLocaleDateString("de-DE", { weekday: "short", day: "2-digit", month: "short" });
-    cell.innerHTML = `<div class="date">${dayLabel}</div>`;
+    const header = document.createElement("div");
+    header.className = "day-header";
+    header.textContent = dayLabel;
 
-    members.forEach((member) => {
-      const row = document.createElement("div");
-      row.className = "hours team-row";
-      const key = dateKey(date);
-      const entries = (state.teamWeekShifts[key] || []).filter((s) => s.userId === member.id);
-      const segments = entries.length ? entries[0].segments : [];
-      const hasWork = segments.length > 0;
-      const totalMinutes = calculateDayTotal(segments);
-      const status = hasWork ? entries[0].status || "Support" : "Keine";
-      const timeLabel = hasWork ? `${formatSegments(segments)} (${formatHours(totalMinutes)})` : "Keine Arbeitszeit";
-      const holiday = getHoliday(date, member.state);
-      const holidayLabel = holiday ? ` · Feiertag: ${holiday}` : "";
-      row.textContent = `${member.name}: ${timeLabel} · ${status}${holidayLabel}`;
-      row.style.background = statusColor(status, hasWork);
-      cell.appendChild(row);
+    const body = document.createElement("div");
+    body.className = "day-body";
+
+    for (let h = 0; h <= 24; h += 1) {
+      const label = document.createElement("div");
+      label.className = "hour-label";
+      label.style.top = `${(h / 24) * 100}%`;
+      label.textContent = `${String(h).padStart(2, "0")}:00`;
+      body.appendChild(label);
+    }
+
+    addCoreLines(body, core);
+
+    const key = dateKey(date);
+    const entries = state.teamWeekShifts[key] || [];
+    entries.forEach((entry) => {
+      const userIndex = userList.findIndex((u) => u.id === entry.userId);
+      if (userIndex === -1) return;
+      const left = 44 + userIndex * columnWidth;
+      const segments = entry.segments || [];
+      segments.forEach((seg) => {
+        const start = minutesBetween("00:00", seg.start);
+        const end = minutesBetween("00:00", seg.end);
+        if (end <= start) return;
+        const top = (start / 1440) * 100;
+        const height = ((end - start) / 1440) * 100;
+        const bar = document.createElement("div");
+        bar.className = "shift-bar";
+        bar.style.top = `${top}%`;
+        bar.style.height = `${height}%`;
+        bar.style.left = `${left}px`;
+        bar.style.background = statusColor(entry.status || "Support", true);
+        body.appendChild(bar);
+      });
+      if (segments.length) {
+        const first = segments[0];
+        const start = minutesBetween("00:00", first.start);
+        const top = (start / 1440) * 100;
+        const avatar = document.createElement("div");
+        avatar.className = "shift-avatar";
+        avatar.style.top = `calc(${top}% - 16px)`;
+        avatar.style.left = `${left - 6}px`;
+        const u = userList[userIndex];
+        if (u.avatar) {
+          avatar.style.backgroundImage = `url(${u.avatar})`;
+          avatar.textContent = "";
+        } else {
+          avatar.textContent = initials(u.name);
+        }
+        body.appendChild(avatar);
+      }
     });
 
+    cell.appendChild(header);
+    cell.appendChild(body);
     teamCalendarGrid.appendChild(cell);
   });
 }
@@ -757,6 +825,7 @@ function applyRoleUI() {
   addMemberBtn.hidden = role === "user";
   addTeamBtn.hidden = role !== "admin";
   if (swapRequestsCard) swapRequestsCard.hidden = role === "supervisor";
+  if (teamCoreCard) teamCoreCard.hidden = role !== "admin";
 
   const teamFilters = document.getElementById("teamFilters");
   if (role === "supervisor") {
@@ -793,7 +862,7 @@ function collectNodesByType(nodes, type, bucket = []) {
 
 function updateTeamOptions() {
   const teams = collectNodesByType(state.hierarchy, "team");
-  state.teamOptions = teams.map((team) => ({ id: String(team.id), label: team.name }));
+  state.teamOptions = teams.map((team) => ({ id: String(team.id), label: team.name, coreStart: team.core_start, coreEnd: team.core_end }));
   state.teamOptions.unshift({ id: "unassigned", label: "Ohne Team" });
 
   teamFilter.innerHTML = `<option value="all">Alle Teams</option>` +
@@ -803,6 +872,19 @@ function updateTeamOptions() {
 
   const departments = collectNodesByType(state.hierarchy, "abteilung");
   teamParent.innerHTML = departments.map((d) => `<option value="${d.id}">${d.name}</option>`).join("");
+}
+
+function getTeamNodeById(id) {
+  const found = findNode(state.hierarchy, Number(id));
+  return found ? found.node : null;
+}
+
+function getCurrentTeamCore() {
+  const teamNode = getTeamNodeById(state.user.team);
+  return {
+    start: (teamNode && teamNode.core_start) || "07:00",
+    end: (teamNode && teamNode.core_end) || "20:00",
+  };
 }
 
 function findNode(nodes, id, parent = null) {
@@ -878,6 +960,12 @@ function renderTeam() {
   const search = teamSearch.value.trim().toLowerCase();
   const filter = teamFilter.value;
   const teamScope = state.user.role === "admin" ? String(state.user.team || "") : filter;
+
+  if (state.user && state.user.role === "admin" && teamCoreStart && teamCoreEnd) {
+    const core = getCurrentTeamCore();
+    teamCoreStart.value = core.start;
+    teamCoreEnd.value = core.end;
+  }
 
   const members = state.members.filter((member) => {
     if (state.user.role === "supervisor") {
@@ -957,6 +1045,24 @@ function minutesBetween(start, end) {
   const [sh, sm] = start.split(":").map(Number);
   const [eh, em] = end.split(":").map(Number);
   return (eh * 60 + em) - (sh * 60 + sm);
+}
+
+function addCoreLines(container, core) {
+  if (!container || !core || !core.start || !core.end) return;
+  const startMinutes = minutesBetween("00:00", core.start);
+  const endMinutes = minutesBetween("00:00", core.end);
+  if (Number.isFinite(startMinutes)) {
+    const line = document.createElement("div");
+    line.className = "core-line core-start";
+    line.style.top = `${(Math.max(0, Math.min(1440, startMinutes)) / 1440) * 100}%`;
+    container.appendChild(line);
+  }
+  if (Number.isFinite(endMinutes)) {
+    const line = document.createElement("div");
+    line.className = "core-line core-end";
+    line.style.top = `${(Math.max(0, Math.min(1440, endMinutes)) / 1440) * 100}%`;
+    container.appendChild(line);
+  }
 }
 
 function formatHours(minutes) {
@@ -1104,11 +1210,11 @@ async function loadTeamWeekShifts() {
   }
 
   if (state.user.role === "admin") {
-    const date = new Date(state.teamCalendarDate.getFullYear(), state.teamCalendarDate.getMonth(), 1);
-    const year = date.getFullYear();
-    const month = date.getMonth();
-    const fromKey = dateKey(new Date(year, month, 1));
-    const toKey = dateKey(new Date(year, month + 1, 0));
+    if (!state.teamCalendarWeekStart) state.teamCalendarWeekStart = getWeekStart(new Date());
+    const fromKey = dateKey(state.teamCalendarWeekStart);
+    const end = new Date(state.teamCalendarWeekStart);
+    end.setDate(end.getDate() + 6);
+    const toKey = dateKey(end);
     try {
       const shifts = await apiFetch(`/api/shifts?teamId=${state.user.team}&from=${fromKey}&to=${toKey}`);
       state.teamWeekShifts = shifts.reduce((acc, shift) => {
@@ -1830,6 +1936,8 @@ function renderUserDashboard() {
       body.appendChild(label);
     }
 
+    addCoreLines(body, getCurrentTeamCore());
+
     const key = dateKey(date);
     const entries = state.teamWeekShifts[key] || [];
     entries.forEach((entry) => {
@@ -1922,6 +2030,8 @@ async function loadData() {
     id: node.id,
     type: node.type,
     name: node.name,
+    core_start: node.core_start || null,
+    core_end: node.core_end || null,
     children: node.children || [],
   }));
   state.members = users.map((u) => ({
@@ -2448,6 +2558,21 @@ clearMonthBtn.addEventListener("click", clearMonth);
 teamSearch.addEventListener("input", renderTeam);
 teamFilter.addEventListener("change", renderTeam);
 
+if (teamCoreSave) {
+  teamCoreSave.addEventListener("click", async () => {
+    if (!state.user || state.user.role !== "admin") return;
+    const coreStart = teamCoreStart.value;
+    const coreEnd = teamCoreEnd.value;
+    if (!coreStart || !coreEnd) return;
+    await apiFetch(`/api/hierarchy/${state.user.team}`, {
+      method: "PUT",
+      body: JSON.stringify({ coreStart, coreEnd }),
+    });
+    await loadData();
+    renderTeamCalendar();
+  });
+}
+
 addMemberBtn.addEventListener("click", () => {
   if (state.user.role === "user") return;
   if (!state.teamOptions.length) return;
@@ -2579,7 +2704,9 @@ if (userNextDay) {
 
 if (teamCalendarPrev) {
   teamCalendarPrev.addEventListener("click", async () => {
-    state.teamCalendarDate.setMonth(state.teamCalendarDate.getMonth() - 1);
+    if (!state.teamCalendarWeekStart) state.teamCalendarWeekStart = getWeekStart(new Date());
+    state.teamCalendarWeekStart.setDate(state.teamCalendarWeekStart.getDate() - 7);
+    state.teamCalendarWeekOffset = 0;
     await loadTeamWeekShifts();
     renderTeamCalendar();
   });
@@ -2587,8 +2714,24 @@ if (teamCalendarPrev) {
 
 if (teamCalendarNext) {
   teamCalendarNext.addEventListener("click", async () => {
-    state.teamCalendarDate.setMonth(state.teamCalendarDate.getMonth() + 1);
+    if (!state.teamCalendarWeekStart) state.teamCalendarWeekStart = getWeekStart(new Date());
+    state.teamCalendarWeekStart.setDate(state.teamCalendarWeekStart.getDate() + 7);
+    state.teamCalendarWeekOffset = 0;
     await loadTeamWeekShifts();
+    renderTeamCalendar();
+  });
+}
+
+if (teamCalendarPrevDay) {
+  teamCalendarPrevDay.addEventListener("click", () => {
+    state.teamCalendarWeekOffset = Math.max(0, state.teamCalendarWeekOffset - state.teamCalendarWeekPageSize);
+    renderTeamCalendar();
+  });
+}
+
+if (teamCalendarNextDay) {
+  teamCalendarNextDay.addEventListener("click", () => {
+    state.teamCalendarWeekOffset = Math.min(6, state.teamCalendarWeekOffset + state.teamCalendarWeekPageSize);
     renderTeamCalendar();
   });
 }
