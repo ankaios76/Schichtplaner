@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Schichtplaner</title>
-  <link rel="stylesheet" href="styles.css?v=20260220u" />
+  <link rel="stylesheet" href="styles.css?v=20260220v" />
 </head>
 <body>
   <div id="app">
@@ -338,45 +338,8 @@
 
         <section class="page" id="pageUser" hidden>
           <div class="page-header">
-            <h3>Mein Profil</h3>
-            <p class="muted">Arbeitszeit, Profilbild und Zugangsdaten verwalten.</p>
-          </div>
-
-          <div class="profile-grid">
-            <div class="card">
-              <div class="card-title">Wöchentliche Arbeitszeit</div>
-              <div class="field-row">
-                <label class="field inline">
-                  <span>Soll-Stunden</span>
-                  <input id="weeklyTarget" type="number" min="1" max="60" step="0.5" value="38.5" />
-                </label>
-                <div class="stat" id="weeklyStatus">Diese Woche: 0h (0h zu wenig)</div>
-              </div>
-            </div>
-
-            <div class="card">
-              <div class="card-title">Profilbild</div>
-              <div class="upload">
-                <input type="file" id="avatarUpload" accept="image/*" />
-                <button class="ghost" id="removeAvatar">Bild entfernen</button>
-              </div>
-            </div>
-
-            <div class="card">
-              <div class="card-title">Passwort ändern</div>
-              <div class="field-row">
-                <input type="password" placeholder="Aktuelles Passwort" />
-                <input type="password" placeholder="Neues Passwort" />
-                <button class="primary">Speichern</button>
-              </div>
-            </div>
-
-            <div class="card">
-              <div class="card-title">Schichttausch</div>
-              <p class="muted">Ein Schichttausch wird beim nächsten Login an das Team angezeigt.</p>
-              <button class="primary" id="swapRequest">Schichttausch anfragen</button>
-              <div class="hint" id="swapHint" hidden>Gespeichert. Teammitglieder sehen den Hinweis beim nächsten Login.</div>
-            </div>
+            <h3>Meine Arbeitszeit</h3>
+            <p class="muted">Schicht-Templates und Kalender verwalten.</p>
           </div>
 
           <div class="card templates">
@@ -409,6 +372,56 @@
               <div>Arbeitszeit eingetragen</div>
               <div class="muted" id="weeklyTotal">Woche 0h / 38.5h</div>
             </div>
+          </div>
+        </section>
+
+        <section class="page" id="pageProfile" hidden>
+          <div class="page-header">
+            <h3>Mein Profil</h3>
+            <p class="muted">Arbeitszeit, Profilbild und Zugangsdaten verwalten.</p>
+          </div>
+
+          <div class="profile-grid">
+            <div class="card">
+              <div class="card-title">Wöchentliche Arbeitszeit</div>
+              <div class="field-row">
+                <label class="field inline">
+                  <span>Soll-Stunden</span>
+                  <input id="weeklyTarget" type="number" min="1" max="60" step="0.5" value="38.5" />
+                </label>
+                <div class="stat" id="weeklyStatus">Diese Woche: 0h (0h zu wenig)</div>
+              </div>
+            </div>
+
+            <div class="card">
+              <div class="card-title">Profilbild</div>
+              <div class="upload">
+                <input type="file" id="avatarUpload" accept="image/*" />
+                <button class="ghost" id="removeAvatar">Bild entfernen</button>
+              </div>
+            </div>
+
+            <div class="card">
+              <div class="card-title">Passwort ändern</div>
+              <div class="field-row">
+                <input type="password" placeholder="Aktuelles Passwort" />
+                <input type="password" placeholder="Neues Passwort" />
+                <button class="primary">Speichern</button>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section class="page" id="pageSwap" hidden>
+          <div class="page-header">
+            <h3>Schichttausch</h3>
+            <p class="muted">Schichttausch anfragen und Status verfolgen.</p>
+          </div>
+          <div class="card">
+            <div class="card-title">Schichttausch anfragen</div>
+            <p class="muted">Ein Schichttausch wird beim nächsten Login an das Team angezeigt.</p>
+            <button class="primary" id="swapRequest">Schichttausch anfragen</button>
+            <div class="hint" id="swapHint" hidden>Gespeichert. Teammitglieder sehen den Hinweis beim nächsten Login.</div>
           </div>
         </section>
       </main>
@@ -630,6 +643,6 @@
     </div>
   </div>
 
-  <script src="app.js?v=20260220u"></script>
+  <script src="app.js?v=20260220v"></script>
 </body>
 </html>

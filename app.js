@@ -52,6 +52,8 @@ const profilePosition = document.getElementById("profilePosition");
 const pageHierarchy = document.getElementById("pageHierarchy");
 const pageTeam = document.getElementById("pageTeam");
 const pageUser = document.getElementById("pageUser");
+const pageProfile = document.getElementById("pageProfile");
+const pageSwap = document.getElementById("pageSwap");
 const hierarchyTree = document.getElementById("hierarchyTree");
 const teamList = document.getElementById("teamList");
 const teamSearch = document.getElementById("teamSearch");
@@ -200,11 +202,15 @@ const menus = {
     { id: "dashboard", label: "Teamleiter-Dashboard" },
     { id: "team", label: "Team" },
     { id: "user", label: "Meine Arbeitszeit" },
+    { id: "profile", label: "Mein Profil" },
+    { id: "swap", label: "Schichttausch" },
   ],
   user: [
     { id: "dashboard", label: "Startseite" },
     { id: "team", label: "Team" },
     { id: "user", label: "Meine Arbeitszeit" },
+    { id: "profile", label: "Mein Profil" },
+    { id: "swap", label: "Schichttausch" },
   ],
 };
 
@@ -431,6 +437,8 @@ function setActivePage(pageId) {
   pageHierarchy.hidden = pageId !== "hierarchy";
   pageTeam.hidden = pageId !== "team";
   pageUser.hidden = pageId !== "user";
+  pageProfile.hidden = pageId !== "profile";
+  pageSwap.hidden = pageId !== "swap";
   pageUserDashboard.hidden = true;
   const showDashboard = pageId === "dashboard";
   if (state.user && state.user.role === "admin") {
