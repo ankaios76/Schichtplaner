@@ -762,7 +762,8 @@ async function refreshUserCalendar() {
     const shifts = await apiFetch(`/api/shifts?userId=${state.user.memberId}&from=${fromKey}&to=${toKey}`);
     state.dayEntries = {};
     shifts.forEach((shift) => {
-      state.dayEntries[shift.date] = { segments: shift.segments, status: shift.status || "Support" };
+      const key = dateKey(new Date(shift.date));
+      state.dayEntries[key] = { segments: shift.segments, status: shift.status || "Support" };
     });
     renderCalendar();
   } catch (err) {
@@ -780,8 +781,9 @@ async function loadTeamWeekShifts() {
   try {
     const shifts = await apiFetch(`/api/shifts?teamId=${state.user.team}&from=${fromKey}&to=${toKey}`);
     state.teamWeekShifts = shifts.reduce((acc, shift) => {
-      acc[shift.date] = acc[shift.date] || [];
-      acc[shift.date].push(shift);
+      const key = dateKey(new Date(shift.date));
+      acc[key] = acc[key] || [];
+      acc[key].push({ ...shift, date: key });
       return acc;
     }, {});
   } catch (err) {
