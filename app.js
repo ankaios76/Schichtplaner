@@ -79,6 +79,8 @@ const pageAdminDashboard = document.getElementById("pageAdminDashboard");
 const pageUserDashboard = document.getElementById("pageUserDashboard");
 const userTeamCalendar = document.getElementById("userTeamCalendar");
 const userWeekLabel = document.getElementById("userWeekLabel");
+const userPrevMonth = document.getElementById("userPrevMonth");
+const userNextMonth = document.getElementById("userNextMonth");
 const statusLegend = document.getElementById("statusLegend");
 const adminTeamList = document.getElementById("adminTeamList");
 const adminSwapList = document.getElementById("adminSwapList");
@@ -170,6 +172,7 @@ const state = {
   hierarchyDraft: null,
   memberDraft: null,
   pendingMember: null,
+  userMonthDate: new Date(),
 };
 
 const typeLabels = {
@@ -757,7 +760,8 @@ function updateWeeklyTotal() {
 
 async function refreshUserCalendar() {
   if (!state.user) return;
-  const date = new Date(state.calendarDate.getFullYear(), state.calendarDate.getMonth(), 1);
+  const base = state.user && state.user.role === "user" ? state.userMonthDate : state.calendarDate;
+  const date = new Date(base.getFullYear(), base.getMonth(), 1);
   const year = date.getFullYear();
   const month = date.getMonth();
   const from = new Date(year, month, 1);
@@ -779,6 +783,26 @@ async function refreshUserCalendar() {
 
 async function loadTeamWeekShifts() {
   if (!state.user) return;
+  if (state.user.role === "user") {
+    const date = new Date(state.userMonthDate.getFullYear(), state.userMonthDate.getMonth(), 1);
+    const year = date.getFullYear();
+    const month = date.getMonth();
+    const fromKey = dateKey(new Date(year, month, 1));
+    const toKey = dateKey(new Date(year, month + 1, 0));
+    try {
+      const shifts = await apiFetch(`/api/shifts?teamId=${state.user.team}&from=${fromKey}&to=${toKey}`);
+      state.teamWeekShifts = shifts.reduce((acc, shift) => {
+        const key = normalizeDateKey(shift.date);
+        acc[key] = acc[key] || [];
+        acc[key].push({ ...shift, date: key });
+        return acc;
+      }, {});
+    } catch (err) {
+      state.teamWeekShifts = {};
+    }
+    return;
+  }
+
   const today = new Date();
   const fromKey = dateKey(today);
   const end = new Date(today);
@@ -1355,7 +1379,7 @@ function renderUserDashboard() {
   const teamId = String(state.user.team || "unassigned");
   const members = state.members.filter((m) => String(m.team || "unassigned") === teamId);
 
-  const monthStart = new Date();
+  const monthStart = new Date(state.userMonthDate.getFullYear(), state.userMonthDate.getMonth(), 1);
   monthStart.setDate(1);
   const year = monthStart.getFullYear();
   const month = monthStart.getMonth();
@@ -1364,10 +1388,17 @@ function renderUserDashboard() {
 
   const days = [];
   for (let i = 0; i < startDay; i += 1) {
-    days.push(null);
+    const d = new Date(year, month, 1 - (startDay - i));
+    days.push(d);
   }
   for (let day = 1; day <= totalDays; day += 1) {
     days.push(new Date(year, month, day));
+  }
+  while (days.length % 7 !== 0) {
+    const last = days[days.length - 1];
+    const next = new Date(last);
+    next.setDate(last.getDate() + 1);
+    days.push(next);
   }
 
   userWeekLabel.textContent = monthStart.toLocaleDateString("de-DE", { month: "long", year: "numeric" });
@@ -1384,16 +1415,14 @@ function renderUserDashboard() {
   days.forEach((date) => {
     const cell = document.createElement("div");
     cell.className = "calendar-day";
-    if (!date) {
-      cell.classList.add("empty");
-      cell.innerHTML = `<div class="date"></div>`;
-      userTeamCalendar.appendChild(cell);
-      return;
-    }
+    const isCurrentMonth = date.getMonth() === month;
+    if (!isCurrentMonth) cell.classList.add("empty");
 
     const dayLabel = date.toLocaleDateString("de-DE", { weekday: "short", day: "2-digit", month: "short" });
     cell.innerHTML = `<div class="date">${dayLabel}</div>`;
-    cell.addEventListener("click", () => openDayModal(date));
+    if (isCurrentMonth) {
+      cell.addEventListener("click", () => openDayModal(date));
+    }
 
     if (members.length === 0) {
       cell.innerHTML += `<div class="hours muted">Keine Teammitglieder</div>`;
@@ -1418,14 +1447,16 @@ function renderUserDashboard() {
       });
     }
 
-    const editBtn = document.createElement("button");
-    editBtn.className = "ghost";
-    editBtn.textContent = "Meinen Tag bearbeiten";
-    editBtn.addEventListener("click", (event) => {
-      event.stopPropagation();
-      openDayModal(date);
-    });
-    cell.appendChild(editBtn);
+    if (isCurrentMonth) {
+      const editBtn = document.createElement("button");
+      editBtn.className = "ghost";
+      editBtn.textContent = "Meinen Tag bearbeiten";
+      editBtn.addEventListener("click", (event) => {
+        event.stopPropagation();
+        openDayModal(date);
+      });
+      cell.appendChild(editBtn);
+    }
 
     userTeamCalendar.appendChild(cell);
   });
@@ -1902,6 +1933,24 @@ nextMonthBtn.addEventListener("click", () => {
   state.calendarDate.setMonth(state.calendarDate.getMonth() + 1);
   refreshUserCalendar();
 });
+
+if (userPrevMonth) {
+  userPrevMonth.addEventListener("click", async () => {
+    state.userMonthDate.setMonth(state.userMonthDate.getMonth() - 1);
+    await refreshUserCalendar();
+    await loadTeamWeekShifts();
+    renderUserDashboard();
+  });
+}
+
+if (userNextMonth) {
+  userNextMonth.addEventListener("click", async () => {
+    state.userMonthDate.setMonth(state.userMonthDate.getMonth() + 1);
+    await refreshUserCalendar();
+    await loadTeamWeekShifts();
+    renderUserDashboard();
+  });
+}
 
 segmentsContainer.addEventListener("input", (event) => {
   const target = event.target;

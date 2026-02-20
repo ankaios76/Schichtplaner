@@ -269,6 +269,17 @@ button.ghost {
   gap: 12px;
 }
 
+.month-nav {
+  display: flex;
+  gap: 8px;
+}
+
+.calendar-day.empty {
+  background: #f7f7f7;
+  opacity: 0.7;
+  pointer-events: none;
+}
+
 .card-action {
   color: var(--muted);
 }
