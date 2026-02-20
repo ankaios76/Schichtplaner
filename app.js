@@ -129,6 +129,8 @@ const memberPhone = document.getElementById("memberPhone");
 const memberRole = document.getElementById("memberRole");
 const memberSystemRole = document.getElementById("memberSystemRole");
 const memberTeam = document.getElementById("memberTeam");
+const memberRoleField = document.getElementById("memberRoleField");
+const memberTeamField = document.getElementById("memberTeamField");
 const memberStatus = document.getElementById("memberStatus");
 const deleteMemberBtn = document.getElementById("deleteMember");
 const saveMemberBtn = document.getElementById("saveMember");
@@ -1393,6 +1395,8 @@ function openMemberModal({ mode, memberId = null }) {
 
   memberTeam.disabled = state.user.role === "admin";
   memberSystemRole.disabled = state.user.role !== "supervisor";
+  if (memberRoleField) memberRoleField.hidden = state.user.role === "supervisor";
+  if (memberTeamField) memberTeamField.hidden = state.user.role === "supervisor";
   memberSystemRole.innerHTML =
     state.user.role === "supervisor"
       ? "<option value=\"admin\">Teamleiter</option><option value=\"supervisor\">Supervisor</option>"
