@@ -884,8 +884,11 @@ function renderTeam() {
       member.systemRole === "supervisor" ? "Supervisor" : member.systemRole === "admin" ? "Teamleiter" : "Benutzer";
     const roleTeamLine =
       state.user.role === "supervisor" ? "" : `<div class="muted">${member.role} · ${teamLabel}</div>`;
+    const avatarUrl = localStorage.getItem(`avatar_${member.id}`) || "";
+    const avatarStyle = avatarUrl ? `style="background-image: url('${avatarUrl}');"` : "";
+    const avatarText = avatarUrl ? "" : initials(member.name);
     card.innerHTML = `
-      <div class="avatar">${initials(member.name)}</div>
+      <div class="avatar" ${avatarStyle}>${avatarText}</div>
       <div><strong>${member.name}</strong></div>
       ${roleTeamLine}
       <div class="badges">
@@ -1288,6 +1291,9 @@ function updateUserProfile() {
     profilePhoto.style.backgroundImage = `url(${avatar})`;
     sidebarAvatar.style.backgroundImage = `url(${avatar})`;
     sidebarAvatar.textContent = "";
+    if (state.user && state.user.memberId) {
+      localStorage.setItem(`avatar_${state.user.memberId}`, avatar);
+    }
   } else {
     profilePhoto.style.backgroundImage = "none";
     sidebarAvatar.style.backgroundImage = "none";
