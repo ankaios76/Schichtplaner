@@ -739,6 +739,14 @@ function applyRoleUI() {
   addTeamBtn.hidden = role === "user";
   if (swapRequestsCard) swapRequestsCard.hidden = role === "supervisor";
 
+  if (role === "supervisor") {
+    if (teamSearch) teamSearch.hidden = true;
+    if (teamFilter) teamFilter.hidden = true;
+  } else {
+    if (teamSearch) teamSearch.hidden = false;
+    if (teamFilter) teamFilter.hidden = false;
+  }
+
   if (teamPageTitle && teamPageDesc) {
     if (role === "supervisor") {
       teamPageTitle.textContent = "Teamleiter";
