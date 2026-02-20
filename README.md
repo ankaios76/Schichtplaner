@@ -10,6 +10,12 @@ cd Schichtplaner
 sudo bash install.sh
 ```
 
+Der Installer fragt interaktiv:
+- PostgreSQL lokal
+- MySQL lokal
+- PostgreSQL extern
+- MySQL extern
+
 Danach im Browser `http://SERVER_IP/` öffnen und Ersteinrichtung durchführen.
 
 ## Updates deployen
@@ -25,4 +31,4 @@ sudo bash backup.sh
 ## Hinweise
 - Backend läuft als `sp-pln.service`.
 - Einstellungen liegen in `server/.env.local`.
-- Datenbank: `server/data.db` (nicht im Repo).
+- Datenbankverbindung wird über `.env.local` gesteuert.

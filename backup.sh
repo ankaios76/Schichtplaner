@@ -2,16 +2,32 @@
 set -euo pipefail
 
 APP_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-DB_PATH="$APP_DIR/server/data.db"
+ENV_FILE="$APP_DIR/server/.env.local"
 BACKUP_DIR="$APP_DIR/backups"
 TS="$(date +%Y%m%d_%H%M%S)"
 
-if [[ ! -f "$DB_PATH" ]]; then
-  echo "Database not found at $DB_PATH" >&2
+if [[ ! -f "$ENV_FILE" ]]; then
+  echo "Missing $ENV_FILE" >&2
   exit 1
 fi
 
-mkdir -p "$BACKUP_DIR"
-cp "$DB_PATH" "$BACKUP_DIR/data_$TS.db"
+# shellcheck disable=SC1090
+source "$ENV_FILE"
 
-echo "Backup created: $BACKUP_DIR/data_$TS.db"
+mkdir -p "$BACKUP_DIR"
+
+if [[ "$DB_CLIENT" == "postgres" ]]; then
+  export PGPASSWORD="$DB_PASSWORD"
+  pg_dump -h "$DB_HOST" -p "$DB_PORT" -U "$DB_USER" "$DB_NAME" >"$BACKUP_DIR/pg_$TS.sql"
+  echo "Backup created: $BACKUP_DIR/pg_$TS.sql"
+  exit 0
+fi
+
+if [[ "$DB_CLIENT" == "mysql" ]]; then
+  mysqldump -h "$DB_HOST" -P "$DB_PORT" -u "$DB_USER" -p"$DB_PASSWORD" "$DB_NAME" >"$BACKUP_DIR/mysql_$TS.sql"
+  echo "Backup created: $BACKUP_DIR/mysql_$TS.sql"
+  exit 0
+fi
+
+echo "Unsupported DB_CLIENT: $DB_CLIENT" >&2
+exit 1
