@@ -736,7 +736,7 @@ function applyRoleUI() {
   const role = state.user.role;
   addRootBtn.hidden = role !== "supervisor";
   addMemberBtn.hidden = role === "user";
-  addTeamBtn.hidden = role === "user";
+  addTeamBtn.hidden = role !== "admin";
   if (swapRequestsCard) swapRequestsCard.hidden = role === "supervisor";
 
   const teamFilters = document.getElementById("teamFilters");
