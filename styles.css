@@ -280,6 +280,11 @@ button.ghost {
   pointer-events: none;
 }
 
+.calendar-day.today {
+  border: 2px solid var(--accent);
+  box-shadow: 0 0 0 2px rgba(139, 15, 58, 0.1);
+}
+
 .card-action {
   color: var(--muted);
 }

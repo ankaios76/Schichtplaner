@@ -432,6 +432,10 @@ function initials(name) {
     .toUpperCase();
 }
 
+function isSameDay(a, b) {
+  return a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate();
+}
+
 function setActivePage(pageId) {
   state.activePage = pageId;
   pageHierarchy.hidden = pageId !== "hierarchy";
@@ -1425,6 +1429,7 @@ function renderUserDashboard() {
     cell.className = "calendar-day";
     const isCurrentMonth = date.getMonth() === month;
     if (!isCurrentMonth) cell.classList.add("empty");
+    if (isSameDay(date, new Date())) cell.classList.add("today");
 
     const dayLabel = date.toLocaleDateString("de-DE", { weekday: "short", day: "2-digit", month: "short" });
     cell.innerHTML = `<div class="date">${dayLabel}</div>`;
