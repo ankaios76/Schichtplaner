@@ -59,7 +59,7 @@ h1, h2, h3, h4 {
   padding: 36px;
   width: min(520px, 100%);
   display: grid;
-  gap: 16px;
+  gap: 20px;
 }
 
 .brand {
@@ -95,6 +95,14 @@ h1, h2, h3, h4 {
   display: grid;
   gap: 8px;
   font-size: 0.9rem;
+}
+
+.login-card .field {
+  margin-bottom: 4px;
+}
+
+#loginBtn {
+  margin-top: 8px;
 }
 
 .field.inline {
