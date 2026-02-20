@@ -438,12 +438,17 @@ if (BOOTSTRAP_MODE) {
   res.json(buildTree(rows));
 });
 
-  app.post("/api/hierarchy", async (req, res) => {
+app.post("/api/hierarchy", async (req, res) => {
   const { parentId, type, name } = req.body || {};
   if (!type || !name) return res.status(400).json({ error: "Missing fields" });
-  const sortRows = await query("SELECT COALESCE(MAX(sort_order), 0) + 1 as next FROM hierarchy_nodes WHERE parent_id IS ?", [
-    parentId || null,
-  ]);
+  let sortRows;
+  if (parentId === null || parentId === undefined || parentId === "") {
+    sortRows = await query("SELECT COALESCE(MAX(sort_order), 0) + 1 as next FROM hierarchy_nodes WHERE parent_id IS NULL", []);
+  } else {
+    sortRows = await query("SELECT COALESCE(MAX(sort_order), 0) + 1 as next FROM hierarchy_nodes WHERE parent_id = ?", [
+      parentId,
+    ]);
+  }
   const sortOrder = sortRows[0]?.next || 1;
   await execute(
     "INSERT INTO hierarchy_nodes (parent_id, type, name, sort_order) VALUES (?, ?, ?, ?)",
