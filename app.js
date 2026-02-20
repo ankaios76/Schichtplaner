@@ -1887,6 +1887,7 @@ async function loadData() {
     email: u.email,
     phone: u.phone,
     state: u.state || "NW",
+    avatar: u.avatar || null,
   }));
   state.swaps = swaps;
   updateTeamOptions();
