@@ -731,21 +731,12 @@ function renderTeamCalendar() {
         body.appendChild(bar);
       });
       if (segments.length) {
-        const first = segments[0];
-        const start = minutesBetween("00:00", first.start);
-        const top = (start / 1440) * 100;
-        const avatar = document.createElement("div");
-        avatar.className = "shift-avatar";
-        avatar.style.top = `calc(${top}% - 16px)`;
-        avatar.style.left = `${left - 6}px`;
         const u = userList[userIndex];
-        if (u.avatar) {
-          avatar.style.backgroundImage = `url(${u.avatar})`;
-          avatar.textContent = "";
-        } else {
-          avatar.textContent = initials(u.name);
-        }
-        body.appendChild(avatar);
+        segments.forEach((seg) => {
+          const start = minutesBetween("00:00", seg.start);
+          const top = (start / 1440) * 100;
+          body.appendChild(createShiftAvatar(u, top, left));
+        });
       }
     });
 
@@ -1096,6 +1087,20 @@ function addCoreLines(container, core) {
     line.style.top = `${(Math.max(0, Math.min(1440, endMinutes)) / 1440) * 100}%`;
     container.appendChild(line);
   }
+}
+
+function createShiftAvatar(user, top, left) {
+  const avatar = document.createElement("div");
+  avatar.className = "shift-avatar";
+  avatar.style.top = `calc(${top}% - 16px)`;
+  avatar.style.left = `${left - 6}px`;
+  if (user && user.avatar) {
+    avatar.style.backgroundImage = `url(${user.avatar})`;
+    avatar.textContent = "";
+  } else {
+    avatar.textContent = initials(user && user.name ? user.name : "");
+  }
+  return avatar;
 }
 
 function formatHours(minutes) {
@@ -2073,21 +2078,12 @@ function renderUserDashboard() {
         body.appendChild(bar);
       });
       if (segments.length) {
-        const first = segments[0];
-        const start = minutesBetween("00:00", first.start);
-        const top = (start / 1440) * 100;
-        const avatar = document.createElement("div");
-        avatar.className = "shift-avatar";
-        avatar.style.top = `calc(${top}% - 16px)`;
-        avatar.style.left = `${left - 6}px`;
         const u = userList[userIndex];
-        if (u.avatar) {
-          avatar.style.backgroundImage = `url(${u.avatar})`;
-          avatar.textContent = "";
-        } else {
-          avatar.textContent = initials(u.name);
-        }
-        body.appendChild(avatar);
+        segments.forEach((seg) => {
+          const start = minutesBetween("00:00", seg.start);
+          const top = (start / 1440) * 100;
+          body.appendChild(createShiftAvatar(u, top, left));
+        });
       }
     });
 
