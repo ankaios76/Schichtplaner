@@ -873,6 +873,13 @@ function updateOncallSelects() {
   memberOncall.innerHTML = oncallOptions.map((opt) => `<option value="${opt.name}">${opt.name}</option>`).join("");
 }
 
+function ensureOncallOption(name) {
+  if (!name) return;
+  if (!oncallOptions.find((opt) => opt.name === name)) {
+    oncallOptions.push({ name, color: "#e3f2ff" });
+  }
+}
+
 function applyActivityOptionsToUI() {
   if (!dayStatus) return;
   const selected = dayStatus.value;
@@ -1954,6 +1961,7 @@ function openMemberModal({ mode, memberId = null }) {
   if (mode === "edit") {
     const member = state.members.find((m) => m.id === memberId);
     if (!member) return;
+    ensureOncallOption(member.oncallType || "Keine Rufbereitschaft");
     updateOncallSelects();
     memberName.value = member.name;
     memberEmail.value = member.email || "";
