@@ -468,11 +468,11 @@ const defaultActivityOptions = [
 let activityOptions = [...defaultActivityOptions];
 
 const defaultOncallOptions = [
-  "Keine Rufbereitschaft",
-  "KM Voice/Daten",
-  "KC Voice",
-  "KC Access",
-  "Fraudbereitschaft",
+  { name: "Keine Rufbereitschaft", color: "#eeeeee" },
+  { name: "KM Voice/Daten", color: "#e3f2ff" },
+  { name: "KC Voice", color: "#e9ffe6" },
+  { name: "KC Access", color: "#fff4d6" },
+  { name: "Fraudbereitschaft", color: "#ffe1ec" },
 ];
 
 let oncallOptions = [...defaultOncallOptions];
@@ -852,12 +852,17 @@ function renderOncallOptions() {
   if (!oncallList) return;
   oncallList.innerHTML = oncallOptions
     .map(
-      (name) =>
+      (opt, index) =>
         `<div class="template-day">
           <div class="legend-item">
-            <strong>${name}</strong>
+            <span class="legend-swatch" style="background:${opt.color || '#eeeeee'}"></span>
+            <strong>${opt.name}</strong>
           </div>
-          <button class="ghost" data-remove="${name}">Entfernen</button>
+          <label class="field">
+            <span>Farbe</span>
+            <input type="color" data-oncall-color="${index}" value="${opt.color || '#eeeeee'}" />
+          </label>
+          ${opt.name === "Keine Rufbereitschaft" ? "" : `<button class="ghost" data-remove="${opt.name}">Entfernen</button>`}
         </div>`
     )
     .join("");
@@ -865,7 +870,7 @@ function renderOncallOptions() {
 
 function updateOncallSelects() {
   if (!memberOncall) return;
-  memberOncall.innerHTML = oncallOptions.map((name) => `<option value="${name}">${name}</option>`).join("");
+  memberOncall.innerHTML = oncallOptions.map((opt) => `<option value="${opt.name}">${opt.name}</option>`).join("");
 }
 
 function applyActivityOptionsToUI() {
@@ -1949,6 +1954,7 @@ function openMemberModal({ mode, memberId = null }) {
   if (mode === "edit") {
     const member = state.members.find((m) => m.id === memberId);
     if (!member) return;
+    updateOncallSelects();
     memberName.value = member.name;
     memberEmail.value = member.email || "";
     memberPhone.value = member.phone || "";
@@ -1961,6 +1967,7 @@ function openMemberModal({ mode, memberId = null }) {
     memberUser.value = member.username || "";
     memberPass.value = "";
   } else {
+    updateOncallSelects();
     memberName.value = "";
     memberEmail.value = "";
     memberPhone.value = "";
@@ -1983,8 +1990,6 @@ function openMemberModal({ mode, memberId = null }) {
     state.user.role === "supervisor"
       ? "<option value=\"admin\">Teamleiter</option><option value=\"supervisor\">Supervisor</option>"
       : "<option value=\"user\">Benutzer</option>";
-
-  updateOncallSelects();
 
   memberModal.hidden = false;
 }
@@ -2600,7 +2605,14 @@ async function initSetup() {
     }
   }
   if (settings.oncallOptions && Array.isArray(settings.oncallOptions) && settings.oncallOptions.length) {
-    oncallOptions = settings.oncallOptions;
+    if (typeof settings.oncallOptions[0] === "string") {
+      oncallOptions = settings.oncallOptions.map((name) => ({
+        name,
+        color: "#e3f2ff",
+      }));
+    } else {
+      oncallOptions = settings.oncallOptions;
+    }
   }
   if (companyAccent && settings.accent) companyAccent.value = settings.accent;
   if (settingsFooter) settingsFooter.value = settings.footerText || "Made with Love in Bremen <span class=\"heart\">♥</span> by Norbert Hengsteler";
@@ -2825,8 +2837,8 @@ if (oncallAdd) {
   oncallAdd.addEventListener("click", async () => {
     const name = (oncallInput.value || "").trim();
     if (!name) return;
-    if (!oncallOptions.includes(name)) {
-      oncallOptions.push(name);
+    if (!oncallOptions.find((opt) => opt.name === name)) {
+      oncallOptions.push({ name, color: "#e3f2ff" });
     }
     oncallInput.value = "";
     await saveSettingsWithLogo(null);
@@ -2840,8 +2852,21 @@ if (oncallList) {
     const btn = event.target.closest("button");
     if (!btn || !btn.dataset.remove) return;
     const name = btn.dataset.remove;
-    oncallOptions = oncallOptions.filter((opt) => opt !== name);
+    oncallOptions = oncallOptions.filter((opt) => opt.name !== name);
     if (!oncallOptions.length) oncallOptions = [...defaultOncallOptions];
+    await saveSettingsWithLogo(null);
+    renderOncallOptions();
+    updateOncallSelects();
+  });
+}
+
+if (oncallList) {
+  oncallList.addEventListener("input", async (event) => {
+    const input = event.target;
+    if (!input || !input.dataset.oncallColor) return;
+    const index = Number(input.dataset.oncallColor);
+    if (Number.isNaN(index) || !oncallOptions[index]) return;
+    oncallOptions[index].color = input.value;
     await saveSettingsWithLogo(null);
     renderOncallOptions();
     updateOncallSelects();
