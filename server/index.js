@@ -51,7 +51,8 @@ async function createSchemaWith(client, execFn) {
         email TEXT,
         phone TEXT,
         state TEXT,
-        avatar TEXT
+        avatar TEXT,
+        oncall_type TEXT
       );
       CREATE TABLE IF NOT EXISTS hierarchy_nodes (
         id SERIAL PRIMARY KEY,
@@ -79,6 +80,14 @@ async function createSchemaWith(client, execFn) {
         status TEXT,
         UNIQUE(user_id, date)
       );
+      CREATE TABLE IF NOT EXISTS oncall_shifts (
+        id SERIAL PRIMARY KEY,
+        user_id INTEGER NOT NULL,
+        date DATE NOT NULL,
+        segments_json TEXT NOT NULL,
+        status TEXT,
+        UNIQUE(user_id, date)
+      );
       CREATE TABLE IF NOT EXISTS settings (
         id INTEGER PRIMARY KEY,
         company_name TEXT,
@@ -86,6 +95,7 @@ async function createSchemaWith(client, execFn) {
         accent TEXT,
         holiday_overrides TEXT,
         activity_options TEXT,
+        oncall_options TEXT,
         footer_text TEXT
       );
     `);
@@ -103,6 +113,9 @@ async function createSchemaWith(client, execFn) {
         END IF;
         IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='settings' AND column_name='activity_options') THEN
           ALTER TABLE settings ADD COLUMN activity_options TEXT;
+        END IF;
+        IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='settings' AND column_name='oncall_options') THEN
+          ALTER TABLE settings ADD COLUMN oncall_options TEXT;
         END IF;
         IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='settings' AND column_name='footer_text') THEN
           ALTER TABLE settings ADD COLUMN footer_text TEXT;
@@ -126,7 +139,20 @@ async function createSchemaWith(client, execFn) {
         IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='users' AND column_name='avatar') THEN
           ALTER TABLE users ADD COLUMN avatar TEXT;
         END IF;
+        IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='users' AND column_name='oncall_type') THEN
+          ALTER TABLE users ADD COLUMN oncall_type TEXT;
+        END IF;
       END $$;
+    `);
+    await execFn(`
+      CREATE TABLE IF NOT EXISTS oncall_shifts (
+        id SERIAL PRIMARY KEY,
+        user_id INTEGER NOT NULL,
+        date DATE NOT NULL,
+        segments_json TEXT NOT NULL,
+        status TEXT,
+        UNIQUE(user_id, date)
+      );
     `);
     return;
   }
@@ -144,7 +170,8 @@ async function createSchemaWith(client, execFn) {
       email VARCHAR(255),
       phone VARCHAR(255),
       state VARCHAR(50),
-      avatar LONGTEXT
+      avatar LONGTEXT,
+      oncall_type VARCHAR(255)
     );
   `);
   await execFn(`
@@ -180,6 +207,16 @@ async function createSchemaWith(client, execFn) {
     );
   `);
   await execFn(`
+    CREATE TABLE IF NOT EXISTS oncall_shifts (
+      id INT AUTO_INCREMENT PRIMARY KEY,
+      user_id INT NOT NULL,
+      date DATE NOT NULL,
+      segments_json TEXT NOT NULL,
+      status VARCHAR(50),
+      UNIQUE KEY uniq_oncall_user_date (user_id, date)
+    );
+  `);
+  await execFn(`
     CREATE TABLE IF NOT EXISTS settings (
       id INT PRIMARY KEY,
       company_name VARCHAR(255),
@@ -187,6 +224,7 @@ async function createSchemaWith(client, execFn) {
       accent VARCHAR(32),
       holiday_overrides LONGTEXT,
       activity_options LONGTEXT,
+      oncall_options LONGTEXT,
       footer_text TEXT
     );
   `);
@@ -201,6 +239,9 @@ async function createSchemaWith(client, execFn) {
     await execFn("ALTER TABLE settings ADD COLUMN IF NOT EXISTS activity_options LONGTEXT");
   } catch {}
   try {
+    await execFn("ALTER TABLE settings ADD COLUMN IF NOT EXISTS oncall_options LONGTEXT");
+  } catch {}
+  try {
     await execFn("ALTER TABLE settings ADD COLUMN IF NOT EXISTS footer_text TEXT");
   } catch {}
   try {
@@ -211,6 +252,9 @@ async function createSchemaWith(client, execFn) {
   } catch {}
   try {
     await execFn("ALTER TABLE users ADD COLUMN IF NOT EXISTS avatar LONGTEXT");
+  } catch {}
+  try {
+    await execFn("ALTER TABLE users ADD COLUMN IF NOT EXISTS oncall_type VARCHAR(255)");
   } catch {}
 }
 
@@ -482,7 +526,7 @@ if (BOOTSTRAP_MODE) {
   if (!username || !password) return res.status(400).json({ error: "Missing credentials" });
 
   const rows = await query(
-    "SELECT id, name, username, password_hash, system_role, team, status, role_title, email, phone, state, avatar FROM users WHERE username = ?",
+    "SELECT id, name, username, password_hash, system_role, team, status, role_title, email, phone, state, avatar, oncall_type FROM users WHERE username = ?",
     [username]
   );
   const user = rows[0];
@@ -503,11 +547,15 @@ if (BOOTSTRAP_MODE) {
     phone: user.phone,
     state: user.state,
     avatar: user.avatar,
+    oncallType: user.oncall_type || null,
   });
 });
 
   app.get("/api/settings", async (req, res) => {
-    const rows = await query("SELECT company_name, logo, accent, holiday_overrides, activity_options, footer_text FROM settings WHERE id = 1", []);
+    const rows = await query(
+      "SELECT company_name, logo, accent, holiday_overrides, activity_options, oncall_options, footer_text FROM settings WHERE id = 1",
+      []
+    );
     const row = rows[0] || {};
     res.json({
       companyName: row.company_name || null,
@@ -515,22 +563,25 @@ if (BOOTSTRAP_MODE) {
       accent: row.accent || null,
       holidayOverrides: row.holiday_overrides ? JSON.parse(row.holiday_overrides) : {},
       activityOptions: row.activity_options ? JSON.parse(row.activity_options) : null,
+      oncallOptions: row.oncall_options ? JSON.parse(row.oncall_options) : null,
       footerText: row.footer_text || null,
       hasSupervisor: await hasSupervisor(),
     });
   });
 
   app.post("/api/settings", async (req, res) => {
-    const { companyName, logo, accent, holidayOverrides, activityOptions, footerText } = req.body || {};
+    const { companyName, logo, accent, holidayOverrides, activityOptions, oncallOptions, footerText } = req.body || {};
     if (!companyName) return res.status(400).json({ error: "Missing company name" });
     const overridesJson = holidayOverrides ? JSON.stringify(holidayOverrides) : null;
     const activityJson = activityOptions ? JSON.stringify(activityOptions) : null;
-    await execute("UPDATE settings SET company_name = ?, logo = ?, accent = ?, holiday_overrides = ?, activity_options = ?, footer_text = ? WHERE id = 1", [
+    const oncallJson = oncallOptions ? JSON.stringify(oncallOptions) : null;
+    await execute("UPDATE settings SET company_name = ?, logo = ?, accent = ?, holiday_overrides = ?, activity_options = ?, oncall_options = ?, footer_text = ? WHERE id = 1", [
       companyName,
       logo || null,
       accent || null,
       overridesJson,
       activityJson,
+      oncallJson,
       footerText || null,
     ]);
     res.json({ ok: true });
@@ -607,7 +658,7 @@ app.put("/api/hierarchy/:id", async (req, res) => {
 
   app.get("/api/users", async (req, res) => {
   const rows = await query(
-    "SELECT id, name, username, system_role, team, status, role_title, email, phone, state, avatar FROM users",
+    "SELECT id, name, username, system_role, team, status, role_title, email, phone, state, avatar, oncall_type FROM users",
     []
   );
   res.json(
@@ -623,12 +674,13 @@ app.put("/api/hierarchy/:id", async (req, res) => {
       phone: u.phone,
       state: u.state,
       avatar: u.avatar,
+      oncallType: u.oncall_type,
     }))
   );
 });
 
   app.post("/api/users", async (req, res) => {
-  const { name, username, password, systemRole, team, status, role, email, phone, state, avatar } = req.body || {};
+  const { name, username, password, systemRole, team, status, role, email, phone, state, avatar, oncallType } = req.body || {};
   if (!name || !username || !password || !systemRole || !team || !status) {
     return res.status(400).json({ error: "Missing fields" });
   }
@@ -636,8 +688,21 @@ app.put("/api/hierarchy/:id", async (req, res) => {
   const hash = bcrypt.hashSync(password, 10);
   try {
     await execute(
-      "INSERT INTO users (name, username, password_hash, system_role, team, status, role_title, email, phone, state, avatar) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
-      [name, username, hash, systemRole, team, status, roleValue, email || null, phone || null, state || null, avatar || null]
+      "INSERT INTO users (name, username, password_hash, system_role, team, status, role_title, email, phone, state, avatar, oncall_type) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+      [
+        name,
+        username,
+        hash,
+        systemRole,
+        team,
+        status,
+        roleValue,
+        email || null,
+        phone || null,
+        state || null,
+        avatar || null,
+        oncallType || null,
+      ]
     );
     res.json({ ok: true });
   } catch (err) {
@@ -647,7 +712,7 @@ app.put("/api/hierarchy/:id", async (req, res) => {
 
   app.put("/api/users/:id", async (req, res) => {
   const id = Number(req.params.id);
-  const { name, username, password, systemRole, team, status, role, email, phone, state, avatar } = req.body || {};
+  const { name, username, password, systemRole, team, status, role, email, phone, state, avatar, oncallType } = req.body || {};
   const rows = await query("SELECT id FROM users WHERE id = ?", [id]);
   if (!rows[0]) return res.status(404).json({ error: "Not found" });
 
@@ -667,6 +732,7 @@ app.put("/api/hierarchy/:id", async (req, res) => {
     phone,
     state,
     avatar,
+    oncall_type: oncallType,
   };
 
   for (const [key, value] of Object.entries(fields)) {
@@ -770,6 +836,75 @@ app.put("/api/hierarchy/:id", async (req, res) => {
     );
   }
 
+  res.json({ ok: true });
+});
+
+app.get("/api/oncall_shifts", async (req, res) => {
+  const { userId, teamId, from, to } = req.query || {};
+  if (!from || !to) return res.status(400).json({ error: "Missing range" });
+
+  if (userId) {
+    const rows = await query(
+      "SELECT user_id, date, segments_json, status FROM oncall_shifts WHERE user_id = ? AND date BETWEEN ? AND ?",
+      [Number(userId), from, to]
+    );
+    return res.json(
+      rows.map((row) => ({
+        userId: row.user_id,
+        date: row.date,
+        segments: JSON.parse(row.segments_json),
+        status: row.status || "Support",
+      }))
+    );
+  }
+
+  if (teamId) {
+    const rows = await query(
+      `SELECT s.user_id, s.date, s.segments_json, s.status, u.name
+       FROM oncall_shifts s
+       JOIN users u ON u.id = s.user_id
+       WHERE u.team = ? AND s.date BETWEEN ? AND ?`,
+      [teamId, from, to]
+    );
+    return res.json(
+      rows.map((row) => ({
+        userId: row.user_id,
+        name: row.name,
+        date: row.date,
+        segments: JSON.parse(row.segments_json),
+        status: row.status || "Support",
+      }))
+    );
+  }
+
+  return res.status(400).json({ error: "Missing filter" });
+});
+
+app.post("/api/oncall_shifts", async (req, res) => {
+  const { userId, date, segments, status } = req.body || {};
+  if (!userId || !date || !segments) return res.status(400).json({ error: "Missing fields" });
+  const json = JSON.stringify(segments);
+  const statusValue = status || "Support";
+
+  if (DB_CLIENT === "postgres") {
+    await execute(
+      "INSERT INTO oncall_shifts (user_id, date, segments_json, status) VALUES (?, ?, ?, ?) ON CONFLICT(user_id, date) DO UPDATE SET segments_json = EXCLUDED.segments_json, status = EXCLUDED.status",
+      [Number(userId), date, json, statusValue]
+    );
+  } else {
+    await execute(
+      "INSERT INTO oncall_shifts (user_id, date, segments_json, status) VALUES (?, ?, ?, ?) ON DUPLICATE KEY UPDATE segments_json = VALUES(segments_json), status = VALUES(status)",
+      [Number(userId), date, json, statusValue]
+    );
+  }
+
+  res.json({ ok: true });
+});
+
+app.delete("/api/oncall_shifts", async (req, res) => {
+  const { userId, date } = req.body || {};
+  if (!userId || !date) return res.status(400).json({ error: "Missing fields" });
+  await execute("DELETE FROM oncall_shifts WHERE user_id = ? AND date = ?", [Number(userId), date]);
   res.json({ ok: true });
 });
 

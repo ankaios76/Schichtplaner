@@ -63,6 +63,7 @@ const printHint = document.getElementById("printHint");
 const pageHierarchy = document.getElementById("pageHierarchy");
 const pageTeam = document.getElementById("pageTeam");
 const pageUser = document.getElementById("pageUser");
+const pageOncall = document.getElementById("pageOncall");
 const pageProfile = document.getElementById("pageProfile");
 const pageSwap = document.getElementById("pageSwap");
 const pageSupport = document.getElementById("pageSupport");
@@ -88,6 +89,14 @@ const calendarGrid = document.getElementById("calendarGrid");
 const monthLabel = document.getElementById("monthLabel");
 const prevMonthBtn = document.getElementById("prevMonth");
 const nextMonthBtn = document.getElementById("nextMonth");
+const oncallTemplateGrid = document.getElementById("oncallTemplateGrid");
+const oncallApplyTemplateBtn = document.getElementById("oncallApplyTemplate");
+const oncallClearMonthBtn = document.getElementById("oncallClearMonth");
+const oncallTemplateNotice = document.getElementById("oncallTemplateNotice");
+const oncallCalendarGrid = document.getElementById("oncallCalendarGrid");
+const oncallMonthLabel = document.getElementById("oncallMonthLabel");
+const oncallPrevMonthBtn = document.getElementById("oncallPrevMonth");
+const oncallNextMonthBtn = document.getElementById("oncallNextMonth");
 const weeklyTotal = document.getElementById("weeklyTotal");
 const defaultDashboard = document.getElementById("defaultDashboard");
 const pageAdminDashboard = document.getElementById("pageAdminDashboard");
@@ -99,6 +108,9 @@ const userNextPage = document.getElementById("userNextPage");
 const userPrevDay = document.getElementById("userPrevDay");
 const userNextDay = document.getElementById("userNextDay");
 const userDayPager = document.getElementById("userDayPager");
+const dashboardMode = document.getElementById("dashboardMode");
+const modeWork = document.getElementById("modeWork");
+const modeOncall = document.getElementById("modeOncall");
 const teamCalendarGrid = document.getElementById("teamCalendarGrid");
 const teamCalendarLabel = document.getElementById("teamCalendarLabel");
 const teamCalendarPrev = document.getElementById("teamCalendarPrev");
@@ -151,6 +163,7 @@ const memberPhone = document.getElementById("memberPhone");
 const memberRole = document.getElementById("memberRole");
 const memberSystemRole = document.getElementById("memberSystemRole");
 const memberTeam = document.getElementById("memberTeam");
+const memberOncall = document.getElementById("memberOncall");
 const memberRoleField = document.getElementById("memberRoleField");
 const memberTeamField = document.getElementById("memberTeamField");
 const memberStatus = document.getElementById("memberStatus");
@@ -206,6 +219,9 @@ const holidayComputedList = document.getElementById("holidayComputedList");
 const activityInput = document.getElementById("activityInput");
 const activityAdd = document.getElementById("activityAdd");
 const activityList = document.getElementById("activityList");
+const oncallInput = document.getElementById("oncallInput");
+const oncallAdd = document.getElementById("oncallAdd");
+const oncallList = document.getElementById("oncallList");
 const teamModal = document.getElementById("teamModal");
 const closeTeamModal = document.getElementById("closeTeamModal");
 const cancelTeam = document.getElementById("cancelTeam");
@@ -221,6 +237,9 @@ const state = {
   calendarDate: new Date(),
   dayEntries: JSON.parse(localStorage.getItem("dayEntries") || "{}"),
   template: JSON.parse(localStorage.getItem("template") || "{}"),
+  oncallCalendarDate: new Date(),
+  oncallDayEntries: JSON.parse(localStorage.getItem("oncallEntries") || "{}"),
+  oncallTemplate: JSON.parse(localStorage.getItem("oncallTemplate") || "{}"),
   selectedDateKey: null,
   modalSegments: [],
   hierarchy: [],
@@ -238,6 +257,8 @@ const state = {
   teamCalendarWeekStart: null,
   teamCalendarWeekOffset: 0,
   teamCalendarWeekPageSize: 1,
+  activeShiftType: "work",
+  dashboardMode: "work",
   settings: {},
 };
 
@@ -277,6 +298,7 @@ const menus = {
     { id: "dashboard", label: "Startseite" },
     { id: "team", label: "Team" },
     { id: "user", label: "Meine Arbeitszeit" },
+    { id: "oncall", label: "Meine Rufbereitschaft" },
     { id: "profile", label: "Mein Profil" },
     { id: "swap", label: "Schichttausch" },
     { id: "support", label: "Hilfe" },
@@ -295,6 +317,7 @@ const menuIcons = {
   user: `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 12a4 4 0 1 0-4-4 4 4 0 0 0 4 4zm-7 9a7 7 0 0 1 14 0z" /></svg>`,
   profile: `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 12a4 4 0 1 0-4-4 4 4 0 0 0 4 4zm-7 9a7 7 0 0 1 14 0z" /></svg>`,
   swap: `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 7h9l-2-2M17 17H8l2 2M7 7l-2 2m12 8l2-2" /></svg>`,
+  oncall: `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6.5 3A2.5 2.5 0 0 0 4 5.5v13A2.5 2.5 0 0 0 6.5 21h11a2.5 2.5 0 0 0 2.5-2.5v-13A2.5 2.5 0 0 0 17.5 3h-11zm5.5 5a4 4 0 1 1-4 4 4 4 0 0 1 4-4zm0 2a2 2 0 1 0 2 2 2 2 0 0 0-2-2zm-3.5 8h7v-1a3.5 3.5 0 0 0-7 0z"/></svg>`,
   support: `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2a10 10 0 1 0 10 10A10 10 0 0 0 12 2zm0 17a1.25 1.25 0 1 1 1.25-1.25A1.25 1.25 0 0 1 12 19zm1.6-5.2c-.9.6-1.1 1-1.1 1.7v.5h-2v-.8c0-1.2.5-2 1.8-2.9.8-.6 1.2-1 1.2-1.8a1.8 1.8 0 0 0-3.6 0H8a3.8 3.8 0 0 1 7.6 0c0 1.4-.8 2.4-2 3.3z" /></svg>`,
 };
 
@@ -443,6 +466,16 @@ const defaultActivityOptions = [
 ];
 
 let activityOptions = [...defaultActivityOptions];
+
+const defaultOncallOptions = [
+  "Keine Rufbereitschaft",
+  "KM Voice/Daten",
+  "KC Voice",
+  "KC Access",
+  "Fraudbereitschaft",
+];
+
+let oncallOptions = [...defaultOncallOptions];
 
 function statusColor(status, hasSegments) {
   if (!hasSegments) return statusColors.Keine;
@@ -599,6 +632,7 @@ function setActivePage(pageId) {
   pageHierarchy.hidden = pageId !== "hierarchy";
   pageTeam.hidden = pageId !== "team";
   pageUser.hidden = pageId !== "user";
+  if (pageOncall) pageOncall.hidden = pageId !== "oncall";
   pageProfile.hidden = pageId !== "profile";
   pageSwap.hidden = pageId !== "swap";
   if (pageSupport) pageSupport.hidden = pageId !== "support";
@@ -748,7 +782,11 @@ function renderTeamCalendar() {
 
 function renderMenu(role) {
   menuList.innerHTML = "";
-  menus[role].forEach((item) => {
+  const items = menus[role].filter((item) => {
+    if (item.id !== "oncall") return true;
+    return state.user && state.user.oncallType && state.user.oncallType !== "Keine Rufbereitschaft";
+  });
+  items.forEach((item) => {
     const btn = document.createElement("button");
     const icon = menuIcons[item.id] || "";
     btn.innerHTML = `${icon}<span>${item.label}</span>`;
@@ -810,6 +848,26 @@ function renderActivityOptions() {
     .join("");
 }
 
+function renderOncallOptions() {
+  if (!oncallList) return;
+  oncallList.innerHTML = oncallOptions
+    .map(
+      (name) =>
+        `<div class="template-day">
+          <div class="legend-item">
+            <strong>${name}</strong>
+          </div>
+          <button class="ghost" data-remove="${name}">Entfernen</button>
+        </div>`
+    )
+    .join("");
+}
+
+function updateOncallSelects() {
+  if (!memberOncall) return;
+  memberOncall.innerHTML = oncallOptions.map((name) => `<option value="${name}">${name}</option>`).join("");
+}
+
 function applyActivityOptionsToUI() {
   if (!dayStatus) return;
   const selected = dayStatus.value;
@@ -832,6 +890,7 @@ async function saveSettingsWithLogo(logoData) {
     accent: settingsAccent.value || null,
     holidayOverrides,
     activityOptions,
+    oncallOptions,
     footerText: settingsFooter ? settingsFooter.value.trim() : null,
   };
   await apiFetch("/api/settings", {
@@ -1051,8 +1110,35 @@ function renderTemplates() {
   });
 }
 
+function renderOncallTemplates() {
+  if (!oncallTemplateGrid) return;
+  oncallTemplateGrid.innerHTML = "";
+  weekdayLabels.slice(0, 5).forEach((day, index) => {
+    const key = `day-${index}`;
+    const entry = state.oncallTemplate[key] || { start: "07:00", end: "15:30" };
+    const card = document.createElement("div");
+    card.className = "template-day";
+    card.innerHTML = `
+      <div class="day-title">${day}</div>
+      <label>
+        <span>Von</span>
+        <input type="time" value="${entry.start}" data-template="${key}" data-field="start" />
+      </label>
+      <label>
+        <span>Bis</span>
+        <input type="time" value="${entry.end}" data-template="${key}" data-field="end" />
+      </label>
+    `;
+    oncallTemplateGrid.appendChild(card);
+  });
+}
+
 function saveTemplate() {
   localStorage.setItem("template", JSON.stringify(state.template));
+}
+
+function saveOncallTemplate() {
+  localStorage.setItem("oncallTemplate", JSON.stringify(state.oncallTemplate));
 }
 
 function updateTemplateFromInputs() {
@@ -1063,6 +1149,17 @@ function updateTemplateFromInputs() {
     state.template[key][field] = input.value;
   });
   saveTemplate();
+}
+
+function updateOncallTemplateFromInputs() {
+  if (!oncallTemplateGrid) return;
+  oncallTemplateGrid.querySelectorAll("input[type='time']").forEach((input) => {
+    const key = input.dataset.template;
+    const field = input.dataset.field;
+    state.oncallTemplate[key] = state.oncallTemplate[key] || { start: "07:00", end: "15:30" };
+    state.oncallTemplate[key][field] = input.value;
+  });
+  saveOncallTemplate();
 }
 
 function minutesBetween(start, end) {
@@ -1181,6 +1278,59 @@ function renderCalendar() {
   updateWeeklyTotal();
 }
 
+function renderOncallCalendar() {
+  if (!oncallCalendarGrid) return;
+  oncallCalendarGrid.innerHTML = "";
+  const date = new Date(state.oncallCalendarDate.getFullYear(), state.oncallCalendarDate.getMonth(), 1);
+  const month = date.getMonth();
+  const year = date.getFullYear();
+
+  if (oncallMonthLabel) {
+    oncallMonthLabel.textContent = date.toLocaleDateString("de-DE", { month: "long", year: "numeric" });
+  }
+
+  weekdayLabels.forEach((label) => {
+    const header = document.createElement("div");
+    header.className = "calendar-day weekday";
+    header.innerHTML = `<div class=\"date\">${label}</div>`;
+    oncallCalendarGrid.appendChild(header);
+  });
+
+  const startDay = (date.getDay() + 6) % 7;
+  const totalDays = new Date(year, month + 1, 0).getDate();
+
+  for (let i = 0; i < startDay; i++) {
+    const empty = document.createElement("div");
+    empty.className = "calendar-day";
+    empty.style.opacity = "0.4";
+    empty.innerHTML = `<div class=\"date\"></div>`;
+    oncallCalendarGrid.appendChild(empty);
+  }
+
+  for (let day = 1; day <= totalDays; day++) {
+    const current = new Date(year, month, day);
+    const entry = getEntryForDate(state.oncallDayEntries, current);
+    const minutes = entry ? calculateDayTotal(entry.segments || []) : 0;
+    const holiday = state.user ? getHoliday(current, state.user.state) : null;
+
+    const cell = document.createElement("div");
+    cell.className = "calendar-day";
+    if (holiday) cell.classList.add("holiday");
+    cell.innerHTML = `
+      <div class=\"date\">${day}</div>
+      <div class=\"hours\">${minutes > 0 ? formatHours(minutes) : "-"}</div>
+    `;
+    if (holiday) {
+      const label = document.createElement("div");
+      label.className = "holiday-label";
+      label.textContent = holiday;
+      cell.appendChild(label);
+    }
+    cell.addEventListener("click", () => openDayModalWithType(current, "oncall"));
+    oncallCalendarGrid.appendChild(cell);
+  }
+}
+
 function updateWeeklyTotal() {
   const target = Number(weeklyTargetInput.value || 0);
   const today = new Date();
@@ -1225,6 +1375,28 @@ async function refreshUserCalendar() {
   }
 }
 
+async function refreshOncallCalendar() {
+  if (!state.user) return;
+  const date = new Date(state.oncallCalendarDate.getFullYear(), state.oncallCalendarDate.getMonth(), 1);
+  const year = date.getFullYear();
+  const month = date.getMonth();
+  const from = new Date(year, month, 1);
+  const to = new Date(year, month + 1, 0);
+  const fromKey = dateKey(from);
+  const toKey = dateKey(to);
+  try {
+    const shifts = await apiFetch(`/api/oncall_shifts?userId=${state.user.memberId}&from=${fromKey}&to=${toKey}`);
+    state.oncallDayEntries = {};
+    shifts.forEach((shift) => {
+      const key = normalizeDateKey(shift.date);
+      state.oncallDayEntries[key] = { segments: shift.segments, status: shift.status || "Support" };
+    });
+    renderOncallCalendar();
+  } catch (err) {
+    renderOncallCalendar();
+  }
+}
+
 async function loadTeamWeekShifts() {
   if (!state.user) return;
   if (state.user.role === "user") {
@@ -1234,7 +1406,8 @@ async function loadTeamWeekShifts() {
     end.setDate(end.getDate() + 6);
     const toKey = dateKey(end);
     try {
-      const shifts = await apiFetch(`/api/shifts?teamId=${state.user.team}&from=${fromKey}&to=${toKey}`);
+      const endpoint = state.dashboardMode === "oncall" ? "/api/oncall_shifts" : "/api/shifts";
+      const shifts = await apiFetch(`${endpoint}?teamId=${state.user.team}&from=${fromKey}&to=${toKey}`);
       state.teamWeekShifts = shifts.reduce((acc, shift) => {
         const key = normalizeDateKey(shift.date);
         acc[key] = acc[key] || [];
@@ -1285,10 +1458,12 @@ async function loadTeamWeekShifts() {
   }
 }
 
-function openDayModal(date) {
+function openDayModalWithType(date, type) {
+  state.activeShiftType = type || "work";
   state.selectedDateKey = dateKey(date);
   modalDate.textContent = date.toLocaleDateString("de-DE", { weekday: "long", day: "2-digit", month: "long" });
-  const entry = state.dayEntries[state.selectedDateKey] || { segments: [{ start: "07:00", end: "15:30" }], status: "Support" };
+  const entries = state.activeShiftType === "oncall" ? state.oncallDayEntries : state.dayEntries;
+  const entry = entries[state.selectedDateKey] || { segments: [{ start: "07:00", end: "15:30" }], status: "Support" };
   state.modalSegments = (entry.segments || []).map((seg) => ({ ...seg }));
   const normalized = (entry.status || "Support").trim();
   applyActivityOptionsToUI();
@@ -1298,6 +1473,10 @@ function openDayModal(date) {
   holidayNotice.textContent = holiday ? `Feiertag: ${holiday}` : "";
   renderSegments();
   dayModal.hidden = false;
+}
+
+function openDayModal(date) {
+  openDayModalWithType(date, "work");
 }
 
 function renderSegments() {
@@ -1319,9 +1498,11 @@ function renderSegments() {
 async function saveDay() {
   const segments = state.modalSegments.filter((seg) => seg.start && seg.end);
   const status = dayStatus.value || "Support";
-  state.dayEntries[state.selectedDateKey] = { segments, status };
-  localStorage.setItem("dayEntries", JSON.stringify(state.dayEntries));
-  await apiFetch("/api/shifts", {
+  const isOncall = state.activeShiftType === "oncall";
+  const targetEntries = isOncall ? state.oncallDayEntries : state.dayEntries;
+  targetEntries[state.selectedDateKey] = { segments, status };
+  localStorage.setItem(isOncall ? "oncallEntries" : "dayEntries", JSON.stringify(targetEntries));
+  await apiFetch(isOncall ? "/api/oncall_shifts" : "/api/shifts", {
     method: "POST",
     body: JSON.stringify({
       userId: state.user.memberId,
@@ -1331,20 +1512,30 @@ async function saveDay() {
     }),
   });
   dayModal.hidden = true;
-  await refreshUserCalendar();
+  if (isOncall) {
+    await refreshOncallCalendar();
+  } else {
+    await refreshUserCalendar();
+  }
   await loadTeamWeekShifts();
   renderUserDashboard();
 }
 
 function deleteDay() {
-  delete state.dayEntries[state.selectedDateKey];
-  localStorage.setItem("dayEntries", JSON.stringify(state.dayEntries));
+  const isOncall = state.activeShiftType === "oncall";
+  const targetEntries = isOncall ? state.oncallDayEntries : state.dayEntries;
+  delete targetEntries[state.selectedDateKey];
+  localStorage.setItem(isOncall ? "oncallEntries" : "dayEntries", JSON.stringify(targetEntries));
   dayModal.hidden = true;
-  apiFetch("/api/shifts", {
+  apiFetch(isOncall ? "/api/oncall_shifts" : "/api/shifts", {
     method: "DELETE",
     body: JSON.stringify({ userId: state.user.memberId, date: state.selectedDateKey }),
   }).then(async () => {
-    await refreshUserCalendar();
+    if (isOncall) {
+      await refreshOncallCalendar();
+    } else {
+      await refreshUserCalendar();
+    }
     await loadTeamWeekShifts();
     renderUserDashboard();
   });
@@ -1415,6 +1606,72 @@ async function applyTemplateToMonth() {
   renderUserDashboard();
 }
 
+async function applyOncallTemplateToMonth() {
+  updateOncallTemplateFromInputs();
+  if (!oncallTemplateNotice) return;
+  const date = new Date(state.oncallCalendarDate.getFullYear(), state.oncallCalendarDate.getMonth(), 1);
+  const month = date.getMonth();
+  const year = date.getFullYear();
+  const totalDays = new Date(year, month + 1, 0).getDate();
+
+  const hasAnyTemplate = weekdayLabels
+    .slice(0, 5)
+    .some((_, idx) => state.oncallTemplate[`day-${idx}`] && state.oncallTemplate[`day-${idx}`].start && state.oncallTemplate[`day-${idx}`].end);
+  if (!hasAnyTemplate) {
+    oncallTemplateNotice.textContent = "Bitte zuerst ein Template hinterlegen.";
+    return;
+  }
+
+  let failures = 0;
+  for (let day = 1; day <= totalDays; day++) {
+    const current = new Date(year, month, day);
+    const weekday = (current.getDay() + 6) % 7;
+    if (weekday <= 4) {
+      const template = state.oncallTemplate[`day-${weekday}`];
+      if (template) {
+        const key = dateKey(current);
+        const segments = [{ start: template.start, end: template.end }];
+        state.oncallDayEntries[key] = { segments, status: "Support" };
+        try {
+          await apiFetch("/api/oncall_shifts", {
+            method: "POST",
+            body: JSON.stringify({
+              userId: state.user.memberId,
+              date: key,
+              segments,
+              status: "Support",
+            }),
+          });
+        } catch {
+          failures += 1;
+        }
+      }
+    }
+    if (weekday > 4) {
+      const key = dateKey(current);
+      if (state.oncallDayEntries[key]) {
+        delete state.oncallDayEntries[key];
+      }
+      try {
+        await apiFetch("/api/oncall_shifts", {
+          method: "DELETE",
+          body: JSON.stringify({ userId: state.user.memberId, date: key }),
+        });
+      } catch {
+        failures += 1;
+      }
+    }
+  }
+
+  localStorage.setItem("oncallEntries", JSON.stringify(state.oncallDayEntries));
+  oncallTemplateNotice.textContent = failures
+    ? `Template angewendet, aber ${failures} Einträge konnten nicht gespeichert werden.`
+    : "Template wurde auf den Monat angewendet.";
+  await refreshOncallCalendar();
+  await loadTeamWeekShifts();
+  renderUserDashboard();
+}
+
 async function clearMonth() {
   const date = new Date(state.calendarDate.getFullYear(), state.calendarDate.getMonth(), 1);
   const year = date.getFullYear();
@@ -1437,6 +1694,32 @@ async function clearMonth() {
   await Promise.all(deletes);
   localStorage.setItem("dayEntries", JSON.stringify(state.dayEntries));
   await refreshUserCalendar();
+  await loadTeamWeekShifts();
+  renderUserDashboard();
+}
+
+async function clearOncallMonth() {
+  const date = new Date(state.oncallCalendarDate.getFullYear(), state.oncallCalendarDate.getMonth(), 1);
+  const year = date.getFullYear();
+  const month = date.getMonth();
+  const totalDays = new Date(year, month + 1, 0).getDate();
+
+  const deletes = [];
+  for (let day = 1; day <= totalDays; day++) {
+    const current = new Date(year, month, day);
+    const key = dateKey(current);
+    if (state.oncallDayEntries[key]) delete state.oncallDayEntries[key];
+    deletes.push(
+      apiFetch("/api/oncall_shifts", {
+        method: "DELETE",
+        body: JSON.stringify({ userId: state.user.memberId, date: key }),
+      })
+    );
+  }
+
+  await Promise.all(deletes);
+  localStorage.setItem("oncallEntries", JSON.stringify(state.oncallDayEntries));
+  await refreshOncallCalendar();
   await loadTeamWeekShifts();
   renderUserDashboard();
 }
@@ -1672,6 +1955,7 @@ function openMemberModal({ mode, memberId = null }) {
     memberRole.value = member.role || "Mitarbeiter";
     memberSystemRole.value = member.systemRole || "user";
     memberTeam.value = member.team;
+    if (memberOncall) memberOncall.value = member.oncallType || "Keine Rufbereitschaft";
     memberStatus.value = member.status;
     memberState.value = member.state || "NW";
     memberUser.value = member.username || "";
@@ -1683,6 +1967,7 @@ function openMemberModal({ mode, memberId = null }) {
     memberRole.value = "Mitarbeiter";
     memberSystemRole.value = "user";
     memberTeam.value = state.user.role === "admin" ? String(state.user.team || "unassigned") : (state.teamOptions[0]?.id || "unassigned");
+    if (memberOncall) memberOncall.value = "Keine Rufbereitschaft";
     memberStatus.value = "aktiv";
     memberState.value = "NW";
     memberUser.value = "";
@@ -1698,6 +1983,8 @@ function openMemberModal({ mode, memberId = null }) {
     state.user.role === "supervisor"
       ? "<option value=\"admin\">Teamleiter</option><option value=\"supervisor\">Supervisor</option>"
       : "<option value=\"user\">Benutzer</option>";
+
+  updateOncallSelects();
 
   memberModal.hidden = false;
 }
@@ -1723,6 +2010,7 @@ function showMemberConfirm(payload) {
     `Systemrolle: ${payload.systemRole === "admin" ? "Teamleiter" : payload.systemRole === "supervisor" ? "Supervisor" : "Benutzer"}`,
     `Funktion: ${payload.role}`,
     `Team: ${payload.team}`,
+    `Rufbereitschaft: ${payload.oncallType || "Keine Rufbereitschaft"}`,
   ];
   if (payload.email) details.push(`E-Mail: ${payload.email}`);
   if (payload.phone) details.push(`Telefon: ${payload.phone}`);
@@ -1828,6 +2116,7 @@ async function saveMemberDraft() {
       username: usernameValue || undefined,
       password: passwordValue || undefined,
       state: memberState.value,
+      oncallType: memberOncall ? memberOncall.value : "Keine Rufbereitschaft",
     };
     try {
       await apiFetch(`/api/users/${state.memberDraft.memberId}`, {
@@ -1851,6 +2140,7 @@ async function saveMemberDraft() {
       username: usernameValue,
       password: passwordValue || randomPassword(),
       state: memberState.value,
+      oncallType: memberOncall ? memberOncall.value : "Keine Rufbereitschaft",
     };
     state.pendingMember = payload;
     showMemberConfirm(payload);
@@ -1987,6 +2277,12 @@ function renderUserDashboard() {
   const teamId = String(state.user.team || "unassigned");
   const members = state.members.filter((m) => String(m.team || "unassigned") === teamId);
 
+  const hasOncall = state.user.oncallType && state.user.oncallType !== "Keine Rufbereitschaft";
+  if (dashboardMode) dashboardMode.hidden = !hasOncall;
+  if (!hasOncall) state.dashboardMode = "work";
+  if (modeWork) modeWork.classList.toggle("active", state.dashboardMode === "work");
+  if (modeOncall) modeOncall.classList.toggle("active", state.dashboardMode === "oncall");
+
   if (!state.userWeekStart) state.userWeekStart = getWeekStart(new Date());
   const weekStart = new Date(state.userWeekStart);
   const days = Array.from({ length: 7 }, (_, i) => {
@@ -2041,10 +2337,10 @@ function renderUserDashboard() {
     const header = document.createElement("div");
     header.className = "day-header";
     header.textContent = dayLabel;
-    header.addEventListener("click", () => openDayModal(date));
+    header.addEventListener("click", () => openDayModalWithType(date, state.dashboardMode));
     const body = document.createElement("div");
     body.className = "day-body";
-    body.addEventListener("click", () => openDayModal(date));
+    body.addEventListener("click", () => openDayModalWithType(date, state.dashboardMode));
 
     for (let h = 0; h <= 24; h += 1) {
       const label = document.createElement("div");
@@ -2155,9 +2451,11 @@ async function loadData() {
     phone: u.phone,
     state: u.state || "NW",
     avatar: u.avatar || null,
+    oncallType: u.oncallType || "Keine Rufbereitschaft",
   }));
   state.swaps = swaps;
   updateTeamOptions();
+  updateOncallSelects();
   renderHierarchy();
   renderTeam();
   renderSwaps();
@@ -2197,6 +2495,7 @@ function handleLogin(event) {
         memberId: member.id,
         state: ensureDefaultStateForUser(member),
         avatar: member.avatar || null,
+        oncallType: member.oncallType || "Keine Rufbereitschaft",
       };
       loginView.hidden = true;
       appView.hidden = false;
@@ -2214,7 +2513,9 @@ function handleLogin(event) {
       renderMenu(member.systemRole);
       applyRoleUI();
       renderTemplates();
+      renderOncallTemplates();
       refreshUserCalendar();
+      refreshOncallCalendar();
       updateUserProfile();
       setSupportPdf();
       updatePrintInputs();
@@ -2247,6 +2548,8 @@ function handleLogin(event) {
         }
         renderHolidayOverrides();
         renderActivityOptions();
+        renderOncallOptions();
+        updateOncallSelects();
       }
       renderAdminDashboard();
     })
@@ -2295,6 +2598,9 @@ async function initSetup() {
     } else {
       activityOptions = settings.activityOptions;
     }
+  }
+  if (settings.oncallOptions && Array.isArray(settings.oncallOptions) && settings.oncallOptions.length) {
+    oncallOptions = settings.oncallOptions;
   }
   if (companyAccent && settings.accent) companyAccent.value = settings.accent;
   if (settingsFooter) settingsFooter.value = settings.footerText || "Made with Love in Bremen <span class=\"heart\">♥</span> by Norbert Hengsteler";
@@ -2515,6 +2821,33 @@ if (activityList) {
   });
 }
 
+if (oncallAdd) {
+  oncallAdd.addEventListener("click", async () => {
+    const name = (oncallInput.value || "").trim();
+    if (!name) return;
+    if (!oncallOptions.includes(name)) {
+      oncallOptions.push(name);
+    }
+    oncallInput.value = "";
+    await saveSettingsWithLogo(null);
+    renderOncallOptions();
+    updateOncallSelects();
+  });
+}
+
+if (oncallList) {
+  oncallList.addEventListener("click", async (event) => {
+    const btn = event.target.closest("button");
+    if (!btn || !btn.dataset.remove) return;
+    const name = btn.dataset.remove;
+    oncallOptions = oncallOptions.filter((opt) => opt !== name);
+    if (!oncallOptions.length) oncallOptions = [...defaultOncallOptions];
+    await saveSettingsWithLogo(null);
+    renderOncallOptions();
+    updateOncallSelects();
+  });
+}
+
 weeklyTargetInput.addEventListener("input", updateWeeklyTotal);
 
 addRootBtn.addEventListener("click", () => {
@@ -2665,6 +2998,9 @@ if (cancelAvatarCrop) cancelAvatarCrop.addEventListener("click", closeCropper);
 applyTemplateBtn.addEventListener("click", applyTemplateToMonth);
 templateGrid.addEventListener("change", updateTemplateFromInputs);
 clearMonthBtn.addEventListener("click", clearMonth);
+if (oncallApplyTemplateBtn) oncallApplyTemplateBtn.addEventListener("click", applyOncallTemplateToMonth);
+if (oncallTemplateGrid) oncallTemplateGrid.addEventListener("change", updateOncallTemplateFromInputs);
+if (oncallClearMonthBtn) oncallClearMonthBtn.addEventListener("click", clearOncallMonth);
 
 teamSearch.addEventListener("input", renderTeam);
 teamFilter.addEventListener("change", renderTeam);
@@ -2782,6 +3118,20 @@ nextMonthBtn.addEventListener("click", () => {
   refreshUserCalendar();
 });
 
+if (oncallPrevMonthBtn) {
+  oncallPrevMonthBtn.addEventListener("click", () => {
+    state.oncallCalendarDate.setMonth(state.oncallCalendarDate.getMonth() - 1);
+    refreshOncallCalendar();
+  });
+}
+
+if (oncallNextMonthBtn) {
+  oncallNextMonthBtn.addEventListener("click", () => {
+    state.oncallCalendarDate.setMonth(state.oncallCalendarDate.getMonth() + 1);
+    refreshOncallCalendar();
+  });
+}
+
 if (userPrevPage) {
   userPrevPage.addEventListener("click", async () => {
     if (!state.userWeekStart) state.userWeekStart = getWeekStart(new Date());
@@ -2814,6 +3164,20 @@ if (userNextDay) {
     state.userWeekOffset = Math.min(6, state.userWeekOffset + state.userWeekPageSize);
     renderUserDashboard();
   });
+}
+
+function setDashboardMode(mode) {
+  if (state.dashboardMode === mode) return;
+  state.dashboardMode = mode;
+  loadTeamWeekShifts().then(renderUserDashboard).catch(() => renderUserDashboard());
+}
+
+if (modeWork) {
+  modeWork.addEventListener("click", () => setDashboardMode("work"));
+}
+
+if (modeOncall) {
+  modeOncall.addEventListener("click", () => setDashboardMode("oncall"));
 }
 
 if (teamCalendarPrev) {

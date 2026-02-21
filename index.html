@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Schichtplaner</title>
-  <link rel="stylesheet" href="styles.css?v=20260220bl" />
+  <link rel="stylesheet" href="styles.css?v=20260220bp" />
 </head>
 <body>
   <div id="app">
@@ -267,6 +267,10 @@
                 <button class="ghost" id="userNextPage">→</button>
               </div>
             </div>
+            <div class="month-nav" id="dashboardMode">
+              <button class="ghost" id="modeWork">Arbeitszeit</button>
+              <button class="ghost" id="modeOncall">Rufbereitschaft</button>
+            </div>
             <div class="month-nav" id="userDayPager">
               <button class="ghost" id="userPrevDay">‹</button>
               <div class="muted">Tage</div>
@@ -416,6 +420,19 @@
               </div>
               <div class="template-grid" id="activityList"></div>
             </div>
+
+            <div class="card">
+              <div class="card-title">Rufbereitschaften</div>
+              <p class="muted">Diese Einträge stehen bei der Benutzeranlage zur Auswahl.</p>
+              <label class="field">
+                <span>Neue Bereitschaft</span>
+                <input id="oncallInput" type="text" placeholder="z. B. KC Voice" />
+              </label>
+              <div class="field-row">
+                <button class="ghost" id="oncallAdd">Hinzufügen</button>
+              </div>
+              <div class="template-grid" id="oncallList"></div>
+            </div>
           </div>
         </section>
 
@@ -499,6 +516,41 @@
             <div class="calendar-legend">
               <div>Arbeitszeit eingetragen</div>
               <div class="muted" id="weeklyTotal">Woche 0h / 38.5h</div>
+            </div>
+          </div>
+        </section>
+
+        <section class="page" id="pageOncall" hidden>
+          <div class="page-header">
+            <h3>Meine Rufbereitschaft</h3>
+            <p class="muted">Rufbereitschafts-Templates und Kalender verwalten.</p>
+          </div>
+
+          <div class="card templates">
+            <div class="card-title">Rufbereitschafts-Templates</div>
+            <div class="muted">Kernarbeitszeit: 07:00 - 20:00 Uhr</div>
+            <div class="template-grid" id="oncallTemplateGrid"></div>
+            <div class="template-actions">
+              <button class="ghost" id="oncallApplyTemplate">Template auf Monat anwenden</button>
+              <div class="muted" id="oncallTemplateNotice"></div>
+            </div>
+          </div>
+
+          <div class="card calendar">
+            <div class="calendar-header">
+              <div>
+                <div class="card-title">Kalender</div>
+                <div class="muted">Wochenstart Montag, Wochenende Sonntag</div>
+              </div>
+              <div class="calendar-controls">
+                <button class="ghost" id="oncallPrevMonth">◀</button>
+                <div id="oncallMonthLabel"></div>
+                <button class="ghost" id="oncallNextMonth">▶</button>
+              </div>
+            </div>
+            <div class="calendar-grid" id="oncallCalendarGrid"></div>
+            <div class="calendar-footer">
+              <button class="ghost" id="oncallClearMonth">Monat löschen</button>
             </div>
           </div>
         </section>
@@ -688,6 +740,10 @@
             </select>
           </label>
           <label class="field">
+            <span>Rufbereitschaft</span>
+            <select id="memberOncall"></select>
+          </label>
+          <label class="field">
             <span>Status</span>
             <select id="memberStatus">
               <option value="aktiv">Aktiv</option>
@@ -819,6 +875,6 @@
     </div>
   </div>
 
-  <script src="app.js?v=20260220bo"></script>
+  <script src="app.js?v=20260220bp"></script>
 </body>
 </html>
