@@ -547,7 +547,17 @@ if (BOOTSTRAP_MODE) {
     phone: user.phone,
     state: user.state,
     avatar: user.avatar,
-    oncallType: user.oncall_type || null,
+    oncallType: (() => {
+      const raw = user.oncall_type || null;
+      if (typeof raw === "string" && raw.trim().startsWith("[")) {
+        try {
+          return JSON.parse(raw);
+        } catch {
+          return raw;
+        }
+      }
+      return raw;
+    })(),
   });
 });
 
@@ -662,7 +672,14 @@ app.put("/api/hierarchy/:id", async (req, res) => {
     []
   );
   res.json(
-    rows.map((u) => ({
+    rows.map((u) => {
+      let oncall = u.oncall_type;
+      if (typeof oncall === "string" && oncall.trim().startsWith("[")) {
+        try {
+          oncall = JSON.parse(oncall);
+        } catch {}
+      }
+      return ({
       id: u.id,
       name: u.name,
       username: u.username,
@@ -674,8 +691,9 @@ app.put("/api/hierarchy/:id", async (req, res) => {
       phone: u.phone,
       state: u.state,
       avatar: u.avatar,
-      oncallType: u.oncall_type,
-    }))
+      oncallType: oncall,
+    });
+    })
   );
 });
 
@@ -687,6 +705,7 @@ app.put("/api/hierarchy/:id", async (req, res) => {
   const roleValue = role || "Mitarbeiter";
   const hash = bcrypt.hashSync(password, 10);
   try {
+    const oncallValue = Array.isArray(oncallType) ? JSON.stringify(oncallType) : oncallType || null;
     await execute(
       "INSERT INTO users (name, username, password_hash, system_role, team, status, role_title, email, phone, state, avatar, oncall_type) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
       [
@@ -701,7 +720,7 @@ app.put("/api/hierarchy/:id", async (req, res) => {
         phone || null,
         state || null,
         avatar || null,
-        oncallType || null,
+        oncallValue,
       ]
     );
     res.json({ ok: true });
@@ -721,6 +740,7 @@ app.put("/api/hierarchy/:id", async (req, res) => {
     if (existing.length) return res.status(409).json({ error: "Username exists" });
   }
 
+  const oncallValue = Array.isArray(oncallType) ? JSON.stringify(oncallType) : oncallType;
   const fields = {
     name,
     username,
@@ -732,7 +752,7 @@ app.put("/api/hierarchy/:id", async (req, res) => {
     phone,
     state,
     avatar,
-    oncall_type: oncallType,
+    oncall_type: oncallValue,
   };
 
   for (const [key, value] of Object.entries(fields)) {

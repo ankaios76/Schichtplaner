@@ -784,7 +784,8 @@ function renderMenu(role) {
   menuList.innerHTML = "";
   const items = menus[role].filter((item) => {
     if (item.id !== "oncall") return true;
-    return state.user && state.user.oncallType && state.user.oncallType !== "Keine Rufbereitschaft";
+    const types = Array.isArray(state.user?.oncallType) ? state.user.oncallType : [state.user?.oncallType];
+    return types && types.some((entry) => entry && entry !== "Keine Rufbereitschaft");
   });
   items.forEach((item) => {
     const btn = document.createElement("button");
@@ -878,6 +879,27 @@ function ensureOncallOption(name) {
   if (!oncallOptions.find((opt) => opt.name === name)) {
     oncallOptions.push({ name, color: "#e3f2ff" });
   }
+}
+
+function normalizeOncallSelection(list) {
+  const unique = Array.from(new Set(list.filter(Boolean)));
+  if (!unique.length) return ["Keine Rufbereitschaft"];
+  if (unique.length > 1) return unique.filter((name) => name !== "Keine Rufbereitschaft");
+  return unique;
+}
+
+function getSelectedOncallTypes() {
+  if (!memberOncall) return ["Keine Rufbereitschaft"];
+  const selected = Array.from(memberOncall.selectedOptions || []).map((opt) => opt.value);
+  return normalizeOncallSelection(selected);
+}
+
+function setSelectedOncallTypes(list) {
+  if (!memberOncall) return;
+  const normalized = normalizeOncallSelection(list || []);
+  Array.from(memberOncall.options).forEach((opt) => {
+    opt.selected = normalized.includes(opt.value);
+  });
 }
 
 function applyActivityOptionsToUI() {
@@ -1961,7 +1983,8 @@ function openMemberModal({ mode, memberId = null }) {
   if (mode === "edit") {
     const member = state.members.find((m) => m.id === memberId);
     if (!member) return;
-    ensureOncallOption(member.oncallType || "Keine Rufbereitschaft");
+    const oncallList = Array.isArray(member.oncallType) ? member.oncallType : [member.oncallType || "Keine Rufbereitschaft"];
+    oncallList.forEach((entry) => ensureOncallOption(entry));
     updateOncallSelects();
     memberName.value = member.name;
     memberEmail.value = member.email || "";
@@ -1969,7 +1992,7 @@ function openMemberModal({ mode, memberId = null }) {
     memberRole.value = member.role || "Mitarbeiter";
     memberSystemRole.value = member.systemRole || "user";
     memberTeam.value = member.team;
-    if (memberOncall) memberOncall.value = member.oncallType || "Keine Rufbereitschaft";
+    setSelectedOncallTypes(oncallList);
     memberStatus.value = member.status;
     memberState.value = member.state || "NW";
     memberUser.value = member.username || "";
@@ -1982,7 +2005,7 @@ function openMemberModal({ mode, memberId = null }) {
     memberRole.value = "Mitarbeiter";
     memberSystemRole.value = "user";
     memberTeam.value = state.user.role === "admin" ? String(state.user.team || "unassigned") : (state.teamOptions[0]?.id || "unassigned");
-    if (memberOncall) memberOncall.value = "Keine Rufbereitschaft";
+    setSelectedOncallTypes(["Keine Rufbereitschaft"]);
     memberStatus.value = "aktiv";
     memberState.value = "NW";
     memberUser.value = "";
@@ -2023,7 +2046,7 @@ function showMemberConfirm(payload) {
     `Systemrolle: ${payload.systemRole === "admin" ? "Teamleiter" : payload.systemRole === "supervisor" ? "Supervisor" : "Benutzer"}`,
     `Funktion: ${payload.role}`,
     `Team: ${payload.team}`,
-    `Rufbereitschaft: ${payload.oncallType || "Keine Rufbereitschaft"}`,
+    `Rufbereitschaft: ${Array.isArray(payload.oncallType) ? payload.oncallType.join(", ") : payload.oncallType || "Keine Rufbereitschaft"}`,
   ];
   if (payload.email) details.push(`E-Mail: ${payload.email}`);
   if (payload.phone) details.push(`Telefon: ${payload.phone}`);
@@ -2129,7 +2152,7 @@ async function saveMemberDraft() {
       username: usernameValue || undefined,
       password: passwordValue || undefined,
       state: memberState.value,
-      oncallType: memberOncall ? memberOncall.value : "Keine Rufbereitschaft",
+      oncallType: getSelectedOncallTypes(),
     };
     try {
       await apiFetch(`/api/users/${state.memberDraft.memberId}`, {
@@ -2153,7 +2176,7 @@ async function saveMemberDraft() {
       username: usernameValue,
       password: passwordValue || randomPassword(),
       state: memberState.value,
-      oncallType: memberOncall ? memberOncall.value : "Keine Rufbereitschaft",
+      oncallType: getSelectedOncallTypes(),
     };
     state.pendingMember = payload;
     showMemberConfirm(payload);
@@ -2290,7 +2313,8 @@ function renderUserDashboard() {
   const teamId = String(state.user.team || "unassigned");
   const members = state.members.filter((m) => String(m.team || "unassigned") === teamId);
 
-  const hasOncall = state.user.oncallType && state.user.oncallType !== "Keine Rufbereitschaft";
+  const oncallTypes = Array.isArray(state.user.oncallType) ? state.user.oncallType : [state.user.oncallType];
+  const hasOncall = oncallTypes.some((entry) => entry && entry !== "Keine Rufbereitschaft");
   if (dashboardMode) dashboardMode.hidden = !hasOncall;
   if (!hasOncall) state.dashboardMode = "work";
   if (modeWork) modeWork.classList.toggle("active", state.dashboardMode === "work");
@@ -2464,7 +2488,7 @@ async function loadData() {
     phone: u.phone,
     state: u.state || "NW",
     avatar: u.avatar || null,
-    oncallType: u.oncallType || "Keine Rufbereitschaft",
+    oncallType: Array.isArray(u.oncallType) ? u.oncallType : u.oncallType ? [u.oncallType] : ["Keine Rufbereitschaft"],
   }));
   state.swaps = swaps;
   updateTeamOptions();
@@ -2506,9 +2530,9 @@ function handleLogin(event) {
         name: member.name,
         team: member.team,
         memberId: member.id,
-        state: ensureDefaultStateForUser(member),
-        avatar: member.avatar || null,
-        oncallType: member.oncallType || "Keine Rufbereitschaft",
+      state: ensureDefaultStateForUser(member),
+      avatar: member.avatar || null,
+      oncallType: Array.isArray(member.oncallType) ? member.oncallType : member.oncallType ? [member.oncallType] : ["Keine Rufbereitschaft"],
       };
       loginView.hidden = true;
       appView.hidden = false;
