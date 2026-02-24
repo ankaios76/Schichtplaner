@@ -6,6 +6,9 @@
   --accent: #8b0f3a;
   --accent-dark: #6f0c2f;
   --accent-soft: #f2dfe6;
+  --accent-2: var(--accent);
+  --accent-2-dark: var(--accent-dark);
+  --accent-2-soft: var(--accent-soft);
   --shadow: 0 20px 50px rgba(18, 32, 46, 0.08);
   --radius: 22px;
 }
@@ -143,13 +146,13 @@ button {
 }
 
 button.primary {
-  background: var(--accent);
+  background: var(--accent-2);
   color: #fff;
   font-weight: 600;
 }
 
 button.primary:hover {
-  background: var(--accent-dark);
+  background: var(--accent-2-dark);
 }
 
 button.ghost {
@@ -347,6 +350,67 @@ button.ghost {
   gap: 8px;
 }
 
+.card-actions {
+  display: flex;
+  align-items: flex-start;
+  gap: 22px;
+}
+
+.nav-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.85rem;
+  white-space: nowrap;
+}
+
+.week-summary {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 2px 0;
+  min-width: 220px;
+  border-right: 1px solid #e6eaee;
+  padding-right: 18px;
+}
+
+.week-summary .summary-group {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+
+.week-summary .summary-label {
+  font-weight: 600;
+  color: var(--text);
+}
+
+.week-summary .summary-avatars {
+  display: flex;
+  gap: 6px;
+  flex-direction: row;
+  align-items: center;
+  padding-left: 6px;
+}
+
+.week-summary .summary-avatar {
+  width: 36px;
+  height: 36px;
+  border-radius: 12px;
+  display: grid;
+  place-items: center;
+  background: #fff;
+  border: 1px solid #e1e5e8;
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: var(--accent);
+}
+
 .month-nav button.active {
   background: var(--accent-soft);
   border-color: var(--accent);
@@ -423,6 +487,15 @@ button.ghost {
   opacity: 0.75;
 }
 
+.core-line.oncall-core {
+  height: 2px;
+  opacity: 0.4;
+}
+
+.core-line.oncall-core.core-end {
+  opacity: 0.7;
+}
+
 .shift-avatar {
   position: absolute;
   left: 6px;
@@ -438,6 +511,39 @@ button.ghost {
   background-size: cover;
   background-position: center;
   background-repeat: no-repeat;
+  cursor: pointer;
+  overflow: hidden;
+}
+
+.shift-avatar .prio-badge {
+  position: absolute;
+  top: -6px;
+  right: -6px;
+  min-width: 22px;
+  height: 22px;
+  padding: 0 4px;
+  border-radius: 11px;
+  background: var(--accent-2);
+  color: #fff;
+  font-size: 0.65rem;
+  font-weight: 700;
+  display: grid;
+  place-items: center;
+  border: 2px solid #fff;
+  line-height: 1;
+  pointer-events: none;
+}
+
+.shift-avatar.prio-outside {
+  overflow: visible;
+}
+
+.shift-avatar.prio-outside .prio-badge {
+  top: -10px;
+  right: -14px;
+  min-width: 24px;
+  height: 24px;
+  border-radius: 12px;
 }
 
 .support-card iframe {
@@ -682,7 +788,7 @@ button.ghost {
 .profile-grid {
   display: grid;
   gap: 16px;
-  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  grid-template-columns: 1fr;
 }
 
 .field-row {
@@ -753,6 +859,33 @@ button.ghost {
   flex-wrap: wrap;
 }
 
+.oncall-core-grid {
+  display: grid;
+  gap: 12px;
+}
+
+.oncall-core-row {
+  display: grid;
+  grid-template-columns: minmax(160px, 1.2fr) repeat(2, minmax(140px, 1fr));
+  gap: 12px;
+  align-items: center;
+  padding: 12px;
+  border-radius: 16px;
+  background: #f5f7f9;
+}
+
+.oncall-core-header {
+  align-items: center;
+}
+
+.oncall-core-body {
+  margin-top: 12px;
+}
+
+#oncallCoreCard.is-collapsed .oncall-core-body {
+  display: none;
+}
+
 .calendar {
   display: grid;
   gap: 16px;
@@ -772,10 +905,30 @@ button.ghost {
   gap: 8px;
 }
 
+.calendar-controls .ghost.active {
+  background: var(--accent-soft);
+  border-color: var(--accent);
+  color: var(--accent-dark);
+}
+
 .calendar-grid {
   display: grid;
   grid-template-columns: repeat(7, minmax(120px, 1fr));
   gap: 8px;
+}
+
+.status-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 6px;
+}
+
+.status-tag {
+  font-size: 0.7rem;
+  padding: 2px 6px;
+  border-radius: 999px;
+  white-space: nowrap;
 }
 
 .calendar-day {
@@ -909,6 +1062,30 @@ button.ghost {
   justify-content: space-between;
   align-items: center;
   color: var(--muted);
+}
+
+#modalMemberHint {
+  margin-bottom: 8px;
+}
+
+.settings-card .card-row {
+  align-items: center;
+}
+
+.settings-card-body {
+  margin-top: 12px;
+}
+
+.settings-card.is-collapsed .settings-card-body {
+  display: none;
+}
+
+.collapsible-card .card-row {
+  align-items: center;
+}
+
+.collapsible-card.is-collapsed .collapsible-body {
+  display: none;
 }
 
 .modal-footer {

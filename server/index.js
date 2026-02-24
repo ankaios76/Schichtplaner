@@ -46,6 +46,7 @@ async function createSchemaWith(client, execFn) {
         password_hash TEXT NOT NULL,
         system_role TEXT NOT NULL,
         team TEXT NOT NULL,
+        subteam TEXT,
         status TEXT NOT NULL,
         role_title TEXT NOT NULL,
         email TEXT,
@@ -61,13 +62,29 @@ async function createSchemaWith(client, execFn) {
         name TEXT NOT NULL,
         sort_order INTEGER NOT NULL DEFAULT 0,
         core_start TEXT,
-        core_end TEXT
+        core_end TEXT,
+        oncall_core TEXT,
+        swaps_enabled BOOLEAN
       );
       CREATE TABLE IF NOT EXISTS swaps (
         id SERIAL PRIMARY KEY,
         requester TEXT NOT NULL,
         team TEXT NOT NULL,
         date DATE NOT NULL,
+        reason TEXT,
+        status TEXT NOT NULL,
+        created_at TIMESTAMP NOT NULL
+      );
+      CREATE TABLE IF NOT EXISTS oncall_swaps (
+        id SERIAL PRIMARY KEY,
+        requester_id INTEGER NOT NULL,
+        requester_name TEXT NOT NULL,
+        responder_id INTEGER,
+        responder_name TEXT,
+        team TEXT NOT NULL,
+        date DATE NOT NULL,
+        oncall_type TEXT NOT NULL,
+        oncall_priority TEXT,
         reason TEXT,
         status TEXT NOT NULL,
         created_at TIMESTAMP NOT NULL
@@ -86,13 +103,16 @@ async function createSchemaWith(client, execFn) {
         date DATE NOT NULL,
         segments_json TEXT NOT NULL,
         status TEXT,
-        UNIQUE(user_id, date)
+        oncall_type TEXT,
+        oncall_priority TEXT,
+        UNIQUE(user_id, date, oncall_type)
       );
       CREATE TABLE IF NOT EXISTS settings (
         id INTEGER PRIMARY KEY,
         company_name TEXT,
         logo TEXT,
         accent TEXT,
+        accent_secondary TEXT,
         holiday_overrides TEXT,
         activity_options TEXT,
         oncall_options TEXT,
@@ -108,6 +128,9 @@ async function createSchemaWith(client, execFn) {
         IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='settings' AND column_name='accent') THEN
           ALTER TABLE settings ADD COLUMN accent TEXT;
         END IF;
+        IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='settings' AND column_name='accent_secondary') THEN
+          ALTER TABLE settings ADD COLUMN accent_secondary TEXT;
+        END IF;
         IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='settings' AND column_name='holiday_overrides') THEN
           ALTER TABLE settings ADD COLUMN holiday_overrides TEXT;
         END IF;
@@ -120,6 +143,9 @@ async function createSchemaWith(client, execFn) {
         IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='settings' AND column_name='footer_text') THEN
           ALTER TABLE settings ADD COLUMN footer_text TEXT;
         END IF;
+        IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='oncall_swaps' AND column_name='oncall_priority') THEN
+          ALTER TABLE oncall_swaps ADD COLUMN oncall_priority TEXT;
+        END IF;
       END $$;
     `);
     await execFn(`
@@ -130,6 +156,12 @@ async function createSchemaWith(client, execFn) {
         END IF;
         IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='hierarchy_nodes' AND column_name='core_end') THEN
           ALTER TABLE hierarchy_nodes ADD COLUMN core_end TEXT;
+        END IF;
+        IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='hierarchy_nodes' AND column_name='oncall_core') THEN
+          ALTER TABLE hierarchy_nodes ADD COLUMN oncall_core TEXT;
+        END IF;
+        IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='hierarchy_nodes' AND column_name='swaps_enabled') THEN
+          ALTER TABLE hierarchy_nodes ADD COLUMN swaps_enabled BOOLEAN;
         END IF;
       END $$;
     `);
@@ -142,6 +174,9 @@ async function createSchemaWith(client, execFn) {
         IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='users' AND column_name='oncall_type') THEN
           ALTER TABLE users ADD COLUMN oncall_type TEXT;
         END IF;
+        IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='users' AND column_name='subteam') THEN
+          ALTER TABLE users ADD COLUMN subteam TEXT;
+        END IF;
       END $$;
     `);
     await execFn(`
@@ -151,8 +186,22 @@ async function createSchemaWith(client, execFn) {
         date DATE NOT NULL,
         segments_json TEXT NOT NULL,
         status TEXT,
-        UNIQUE(user_id, date)
+        oncall_type TEXT,
+        oncall_priority TEXT,
+        UNIQUE(user_id, date, oncall_type)
       );
+    `);
+    await execFn("ALTER TABLE oncall_shifts ADD COLUMN IF NOT EXISTS oncall_type TEXT");
+    await execFn("ALTER TABLE oncall_shifts ADD COLUMN IF NOT EXISTS oncall_priority TEXT");
+    await execFn("UPDATE oncall_shifts SET oncall_type = status WHERE oncall_type IS NULL");
+    await execFn("ALTER TABLE oncall_shifts DROP CONSTRAINT IF EXISTS oncall_shifts_user_id_date_key");
+    await execFn(`
+      DO $$
+      BEGIN
+        IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'oncall_shifts_user_id_date_oncall_key') THEN
+          ALTER TABLE oncall_shifts ADD CONSTRAINT oncall_shifts_user_id_date_oncall_key UNIQUE (user_id, date, oncall_type);
+        END IF;
+      END $$;
     `);
     return;
   }
@@ -165,6 +214,7 @@ async function createSchemaWith(client, execFn) {
       password_hash TEXT NOT NULL,
       system_role VARCHAR(50) NOT NULL,
       team VARCHAR(255) NOT NULL,
+      subteam VARCHAR(255),
       status VARCHAR(50) NOT NULL,
       role_title VARCHAR(255) NOT NULL,
       email VARCHAR(255),
@@ -182,7 +232,9 @@ async function createSchemaWith(client, execFn) {
       name VARCHAR(255) NOT NULL,
       sort_order INT NOT NULL DEFAULT 0,
       core_start VARCHAR(16),
-      core_end VARCHAR(16)
+      core_end VARCHAR(16),
+      oncall_core LONGTEXT,
+      swaps_enabled BOOLEAN
     );
   `);
   await execFn(`
@@ -191,6 +243,22 @@ async function createSchemaWith(client, execFn) {
       requester VARCHAR(255) NOT NULL,
       team VARCHAR(255) NOT NULL,
       date DATE NOT NULL,
+      reason TEXT,
+      status VARCHAR(50) NOT NULL,
+      created_at DATETIME NOT NULL
+    );
+  `);
+  await execFn(`
+    CREATE TABLE IF NOT EXISTS oncall_swaps (
+      id INT AUTO_INCREMENT PRIMARY KEY,
+      requester_id INT NOT NULL,
+      requester_name VARCHAR(255) NOT NULL,
+      responder_id INT NULL,
+      responder_name VARCHAR(255) NULL,
+      team VARCHAR(255) NOT NULL,
+      date DATE NOT NULL,
+      oncall_type VARCHAR(255) NOT NULL,
+      oncall_priority VARCHAR(255),
       reason TEXT,
       status VARCHAR(50) NOT NULL,
       created_at DATETIME NOT NULL
@@ -213,7 +281,9 @@ async function createSchemaWith(client, execFn) {
       date DATE NOT NULL,
       segments_json TEXT NOT NULL,
       status VARCHAR(50),
-      UNIQUE KEY uniq_oncall_user_date (user_id, date)
+      oncall_type VARCHAR(255),
+      oncall_priority VARCHAR(255),
+      UNIQUE KEY uniq_oncall_user_date_type (user_id, date, oncall_type)
     );
   `);
   await execFn(`
@@ -222,6 +292,7 @@ async function createSchemaWith(client, execFn) {
       company_name VARCHAR(255),
       logo LONGTEXT,
       accent VARCHAR(32),
+      accent_secondary VARCHAR(32),
       holiday_overrides LONGTEXT,
       activity_options LONGTEXT,
       oncall_options LONGTEXT,
@@ -231,6 +302,9 @@ async function createSchemaWith(client, execFn) {
   await execFn("INSERT IGNORE INTO settings (id, company_name, logo) VALUES (1, NULL, NULL)");
   try {
     await execFn("ALTER TABLE settings ADD COLUMN IF NOT EXISTS accent VARCHAR(32)");
+  } catch {}
+  try {
+    await execFn("ALTER TABLE settings ADD COLUMN IF NOT EXISTS accent_secondary VARCHAR(32)");
   } catch {}
   try {
     await execFn("ALTER TABLE settings ADD COLUMN IF NOT EXISTS holiday_overrides LONGTEXT");
@@ -245,16 +319,43 @@ async function createSchemaWith(client, execFn) {
     await execFn("ALTER TABLE settings ADD COLUMN IF NOT EXISTS footer_text TEXT");
   } catch {}
   try {
+    await execFn("ALTER TABLE oncall_swaps ADD COLUMN IF NOT EXISTS oncall_priority VARCHAR(255)");
+  } catch {}
+  try {
     await execFn("ALTER TABLE hierarchy_nodes ADD COLUMN IF NOT EXISTS core_start VARCHAR(16)");
   } catch {}
   try {
     await execFn("ALTER TABLE hierarchy_nodes ADD COLUMN IF NOT EXISTS core_end VARCHAR(16)");
   } catch {}
   try {
+    await execFn("ALTER TABLE hierarchy_nodes ADD COLUMN IF NOT EXISTS oncall_core LONGTEXT");
+  } catch {}
+  try {
+    await execFn("ALTER TABLE hierarchy_nodes ADD COLUMN IF NOT EXISTS swaps_enabled BOOLEAN");
+  } catch {}
+  try {
     await execFn("ALTER TABLE users ADD COLUMN IF NOT EXISTS avatar LONGTEXT");
   } catch {}
   try {
     await execFn("ALTER TABLE users ADD COLUMN IF NOT EXISTS oncall_type VARCHAR(255)");
+  } catch {}
+  try {
+    await execFn("ALTER TABLE users ADD COLUMN IF NOT EXISTS subteam VARCHAR(255)");
+  } catch {}
+  try {
+    await execFn("ALTER TABLE oncall_shifts ADD COLUMN IF NOT EXISTS oncall_type VARCHAR(255)");
+  } catch {}
+  try {
+    await execFn("ALTER TABLE oncall_shifts ADD COLUMN IF NOT EXISTS oncall_priority VARCHAR(255)");
+  } catch {}
+  try {
+    await execFn("UPDATE oncall_shifts SET oncall_type = status WHERE oncall_type IS NULL");
+  } catch {}
+  try {
+    await execFn("ALTER TABLE oncall_shifts DROP INDEX uniq_oncall_user_date");
+  } catch {}
+  try {
+    await execFn("ALTER TABLE oncall_shifts ADD UNIQUE KEY uniq_oncall_user_date_type (user_id, date, oncall_type)");
   } catch {}
 }
 
@@ -526,7 +627,7 @@ if (BOOTSTRAP_MODE) {
   if (!username || !password) return res.status(400).json({ error: "Missing credentials" });
 
   const rows = await query(
-    "SELECT id, name, username, password_hash, system_role, team, status, role_title, email, phone, state, avatar, oncall_type FROM users WHERE username = ?",
+    "SELECT id, name, username, password_hash, system_role, team, subteam, status, role_title, email, phone, state, avatar, oncall_type FROM users WHERE username = ?",
     [username]
   );
   const user = rows[0];
@@ -541,6 +642,7 @@ if (BOOTSTRAP_MODE) {
     username: user.username,
     systemRole: user.system_role,
     team: user.team,
+    subteam: user.subteam,
     status: user.status,
     role: user.role_title,
     email: user.email,
@@ -563,7 +665,7 @@ if (BOOTSTRAP_MODE) {
 
   app.get("/api/settings", async (req, res) => {
     const rows = await query(
-      "SELECT company_name, logo, accent, holiday_overrides, activity_options, oncall_options, footer_text FROM settings WHERE id = 1",
+      "SELECT company_name, logo, accent, accent_secondary, holiday_overrides, activity_options, oncall_options, footer_text FROM settings WHERE id = 1",
       []
     );
     const row = rows[0] || {};
@@ -571,6 +673,7 @@ if (BOOTSTRAP_MODE) {
       companyName: row.company_name || null,
       logo: row.logo || null,
       accent: row.accent || null,
+      accentSecondary: row.accent_secondary || null,
       holidayOverrides: row.holiday_overrides ? JSON.parse(row.holiday_overrides) : {},
       activityOptions: row.activity_options ? JSON.parse(row.activity_options) : null,
       oncallOptions: row.oncall_options ? JSON.parse(row.oncall_options) : null,
@@ -580,20 +683,24 @@ if (BOOTSTRAP_MODE) {
   });
 
   app.post("/api/settings", async (req, res) => {
-    const { companyName, logo, accent, holidayOverrides, activityOptions, oncallOptions, footerText } = req.body || {};
+    const { companyName, logo, accent, accentSecondary, holidayOverrides, activityOptions, oncallOptions, footerText } = req.body || {};
     if (!companyName) return res.status(400).json({ error: "Missing company name" });
     const overridesJson = holidayOverrides ? JSON.stringify(holidayOverrides) : null;
     const activityJson = activityOptions ? JSON.stringify(activityOptions) : null;
     const oncallJson = oncallOptions ? JSON.stringify(oncallOptions) : null;
-    await execute("UPDATE settings SET company_name = ?, logo = ?, accent = ?, holiday_overrides = ?, activity_options = ?, oncall_options = ?, footer_text = ? WHERE id = 1", [
-      companyName,
-      logo || null,
-      accent || null,
-      overridesJson,
-      activityJson,
-      oncallJson,
-      footerText || null,
-    ]);
+    await execute(
+      "UPDATE settings SET company_name = ?, logo = ?, accent = ?, accent_secondary = ?, holiday_overrides = ?, activity_options = ?, oncall_options = ?, footer_text = ? WHERE id = 1",
+      [
+        companyName,
+        logo || null,
+        accent || null,
+        accentSecondary || null,
+        overridesJson,
+        activityJson,
+        oncallJson,
+        footerText || null,
+      ]
+    );
     res.json({ ok: true });
   });
 
@@ -634,7 +741,7 @@ app.post("/api/hierarchy", async (req, res) => {
 });
 
 app.put("/api/hierarchy/:id", async (req, res) => {
-  const { name, coreStart, coreEnd } = req.body || {};
+  const { name, coreStart, coreEnd, oncallCore, swapsEnabled } = req.body || {};
   const id = Number(req.params.id);
   const rows = await query("SELECT id, type FROM hierarchy_nodes WHERE id = ?", [id]);
   if (!rows[0]) return res.status(404).json({ error: "Not found" });
@@ -648,6 +755,13 @@ app.put("/api/hierarchy/:id", async (req, res) => {
       coreEnd || null,
       id,
     ]);
+  }
+  if (rows[0].type === "team" && oncallCore) {
+    const json = typeof oncallCore === "string" ? oncallCore : JSON.stringify(oncallCore);
+    await execute("UPDATE hierarchy_nodes SET oncall_core = ? WHERE id = ?", [json, id]);
+  }
+  if (rows[0].type === "team" && swapsEnabled !== undefined) {
+    await execute("UPDATE hierarchy_nodes SET swaps_enabled = ? WHERE id = ?", [swapsEnabled ? 1 : 0, id]);
   }
   res.json({ ok: true });
 });
@@ -668,7 +782,7 @@ app.put("/api/hierarchy/:id", async (req, res) => {
 
   app.get("/api/users", async (req, res) => {
   const rows = await query(
-    "SELECT id, name, username, system_role, team, status, role_title, email, phone, state, avatar, oncall_type FROM users",
+    "SELECT id, name, username, system_role, team, subteam, status, role_title, email, phone, state, avatar, oncall_type FROM users",
     []
   );
   res.json(
@@ -685,6 +799,7 @@ app.put("/api/hierarchy/:id", async (req, res) => {
       username: u.username,
       systemRole: u.system_role,
       team: u.team,
+      subteam: u.subteam,
       status: u.status,
       role: u.role_title,
       email: u.email,
@@ -698,7 +813,7 @@ app.put("/api/hierarchy/:id", async (req, res) => {
 });
 
   app.post("/api/users", async (req, res) => {
-  const { name, username, password, systemRole, team, status, role, email, phone, state, avatar, oncallType } = req.body || {};
+  const { name, username, password, systemRole, team, subteam, status, role, email, phone, state, avatar, oncallType } = req.body || {};
   if (!name || !username || !password || !systemRole || !team || !status) {
     return res.status(400).json({ error: "Missing fields" });
   }
@@ -707,13 +822,14 @@ app.put("/api/hierarchy/:id", async (req, res) => {
   try {
     const oncallValue = Array.isArray(oncallType) ? JSON.stringify(oncallType) : oncallType || null;
     await execute(
-      "INSERT INTO users (name, username, password_hash, system_role, team, status, role_title, email, phone, state, avatar, oncall_type) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+      "INSERT INTO users (name, username, password_hash, system_role, team, subteam, status, role_title, email, phone, state, avatar, oncall_type) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
       [
         name,
         username,
         hash,
         systemRole,
         team,
+        subteam || null,
         status,
         roleValue,
         email || null,
@@ -731,7 +847,7 @@ app.put("/api/hierarchy/:id", async (req, res) => {
 
   app.put("/api/users/:id", async (req, res) => {
   const id = Number(req.params.id);
-  const { name, username, password, systemRole, team, status, role, email, phone, state, avatar, oncallType } = req.body || {};
+  const { name, username, password, systemRole, team, subteam, status, role, email, phone, state, avatar, oncallType } = req.body || {};
   const rows = await query("SELECT id FROM users WHERE id = ?", [id]);
   if (!rows[0]) return res.status(404).json({ error: "Not found" });
 
@@ -746,6 +862,7 @@ app.put("/api/hierarchy/:id", async (req, res) => {
     username,
     system_role: systemRole,
     team,
+    subteam,
     status,
     role_title: role || undefined,
     email,
@@ -794,6 +911,118 @@ app.put("/api/hierarchy/:id", async (req, res) => {
   const { status } = req.body || {};
   if (!status) return res.status(400).json({ error: "Missing status" });
   await execute("UPDATE swaps SET status = ? WHERE id = ?", [status, id]);
+  res.json({ ok: true });
+});
+
+  app.get("/api/oncall_swaps", async (req, res) => {
+  const rows = await query("SELECT * FROM oncall_swaps ORDER BY created_at DESC", []);
+  res.json(
+    rows.map((row) => ({
+      id: row.id,
+      requesterId: row.requester_id,
+      requesterName: row.requester_name,
+      responderId: row.responder_id,
+      responderName: row.responder_name,
+      team: row.team,
+      date: row.date,
+      oncallType: row.oncall_type,
+      oncallPriority: row.oncall_priority,
+      reason: row.reason,
+      status: row.status,
+      createdAt: row.created_at,
+    }))
+  );
+});
+
+  app.post("/api/oncall_swaps", async (req, res) => {
+  const { requesterId, date, oncallType, oncallPriority, reason } = req.body || {};
+  if (!requesterId || !date || !oncallType) return res.status(400).json({ error: "Missing fields" });
+  const users = await query("SELECT id, name, team FROM users WHERE id = ?", [Number(requesterId)]);
+  const requester = users[0];
+  if (!requester) return res.status(404).json({ error: "Requester not found" });
+  await execute(
+    "INSERT INTO oncall_swaps (requester_id, requester_name, team, date, oncall_type, oncall_priority, reason, status, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
+    [
+      requester.id,
+      requester.name,
+      requester.team,
+      date,
+      oncallType,
+      oncallPriority || null,
+      reason || null,
+      "offen",
+      new Date().toISOString(),
+    ]
+  );
+  res.json({ ok: true });
+});
+
+  app.put("/api/oncall_swaps/:id", async (req, res) => {
+  const id = Number(req.params.id);
+  const { status, responderId } = req.body || {};
+  if (!status) return res.status(400).json({ error: "Missing status" });
+  const rows = await query("SELECT * FROM oncall_swaps WHERE id = ?", [id]);
+  const request = rows[0];
+  if (!request) return res.status(404).json({ error: "Not found" });
+  if (status === "angenommen") {
+    if (!responderId) return res.status(400).json({ error: "Missing responderId" });
+    const responderRows = await query("SELECT id, name, oncall_type FROM users WHERE id = ?", [Number(responderId)]);
+    const responder = responderRows[0];
+    if (!responder) return res.status(404).json({ error: "Responder not found" });
+    const rawType = responder.oncall_type || null;
+    let types = [];
+    if (typeof rawType === "string" && rawType.trim().startsWith("[")) {
+      try {
+        types = JSON.parse(rawType);
+      } catch {
+        types = [rawType];
+      }
+    } else if (rawType) {
+      types = [rawType];
+    }
+    if (!types.includes(request.oncall_type)) {
+      return res.status(400).json({ error: "Responder not assigned to oncall type" });
+    }
+
+    const shiftRows = await query(
+      "SELECT segments_json, status, oncall_type, oncall_priority FROM oncall_shifts WHERE user_id = ? AND date = ? AND oncall_type = ?",
+      [request.requester_id, request.date, request.oncall_type]
+    );
+    const shift = shiftRows[0];
+    if (!shift) return res.status(404).json({ error: "Oncall shift not found" });
+
+    await execute("DELETE FROM oncall_shifts WHERE user_id = ? AND date = ? AND oncall_type = ?", [
+      Number(responderId),
+      request.date,
+      request.oncall_type,
+    ]);
+    await execute(
+      "INSERT INTO oncall_shifts (user_id, date, segments_json, status, oncall_type, oncall_priority) VALUES (?, ?, ?, ?, ?, ?)",
+      [
+        Number(responderId),
+        request.date,
+        shift.segments_json,
+        shift.status || request.oncall_type,
+        request.oncall_type,
+        shift.oncall_priority || request.oncall_priority,
+      ]
+    );
+    await execute("DELETE FROM oncall_shifts WHERE user_id = ? AND date = ? AND oncall_type = ?", [
+      request.requester_id,
+      request.date,
+      request.oncall_type,
+    ]);
+
+    await execute("UPDATE oncall_swaps SET status = ?, responder_id = ?, responder_name = ? WHERE id = ?", [
+      status,
+      responder.id,
+      responder.name,
+      id,
+    ]);
+    return res.json({ ok: true });
+  }
+
+  await execute("UPDATE oncall_swaps SET status = ? WHERE id = ?", [status, id]);
   res.json({ ok: true });
 });
 
@@ -865,7 +1094,7 @@ app.get("/api/oncall_shifts", async (req, res) => {
 
   if (userId) {
     const rows = await query(
-      "SELECT user_id, date, segments_json, status FROM oncall_shifts WHERE user_id = ? AND date BETWEEN ? AND ?",
+      "SELECT user_id, date, segments_json, status, oncall_type, oncall_priority FROM oncall_shifts WHERE user_id = ? AND date BETWEEN ? AND ?",
       [Number(userId), from, to]
     );
     return res.json(
@@ -873,14 +1102,16 @@ app.get("/api/oncall_shifts", async (req, res) => {
         userId: row.user_id,
         date: row.date,
         segments: JSON.parse(row.segments_json),
-        status: row.status || "Support",
+        status: row.oncall_type || row.status || "Keine Rufbereitschaft",
+        oncallType: row.oncall_type || row.status || "Keine Rufbereitschaft",
+        oncallPriority: row.oncall_priority || null,
       }))
     );
   }
 
   if (teamId) {
     const rows = await query(
-      `SELECT s.user_id, s.date, s.segments_json, s.status, u.name
+      `SELECT s.user_id, s.date, s.segments_json, s.status, s.oncall_type, s.oncall_priority, u.name
        FROM oncall_shifts s
        JOIN users u ON u.id = s.user_id
        WHERE u.team = ? AND s.date BETWEEN ? AND ?`,
@@ -892,7 +1123,9 @@ app.get("/api/oncall_shifts", async (req, res) => {
         name: row.name,
         date: row.date,
         segments: JSON.parse(row.segments_json),
-        status: row.status || "Support",
+        status: row.oncall_type || row.status || "Keine Rufbereitschaft",
+        oncallType: row.oncall_type || row.status || "Keine Rufbereitschaft",
+        oncallPriority: row.oncall_priority || null,
       }))
     );
   }
@@ -901,20 +1134,22 @@ app.get("/api/oncall_shifts", async (req, res) => {
 });
 
 app.post("/api/oncall_shifts", async (req, res) => {
-  const { userId, date, segments, status } = req.body || {};
+  const { userId, date, segments, status, oncallType, oncallPriority } = req.body || {};
   if (!userId || !date || !segments) return res.status(400).json({ error: "Missing fields" });
   const json = JSON.stringify(segments);
-  const statusValue = status || "Support";
+  const statusValue = oncallType || status || "Keine Rufbereitschaft";
+  const oncallValue = oncallType || status || "Keine Rufbereitschaft";
+  const priorityValue = oncallPriority || null;
 
   if (DB_CLIENT === "postgres") {
     await execute(
-      "INSERT INTO oncall_shifts (user_id, date, segments_json, status) VALUES (?, ?, ?, ?) ON CONFLICT(user_id, date) DO UPDATE SET segments_json = EXCLUDED.segments_json, status = EXCLUDED.status",
-      [Number(userId), date, json, statusValue]
+      "INSERT INTO oncall_shifts (user_id, date, segments_json, status, oncall_type, oncall_priority) VALUES (?, ?, ?, ?, ?, ?) ON CONFLICT(user_id, date, oncall_type) DO UPDATE SET segments_json = EXCLUDED.segments_json, status = EXCLUDED.status, oncall_priority = EXCLUDED.oncall_priority",
+      [Number(userId), date, json, statusValue, oncallValue, priorityValue]
     );
   } else {
     await execute(
-      "INSERT INTO oncall_shifts (user_id, date, segments_json, status) VALUES (?, ?, ?, ?) ON DUPLICATE KEY UPDATE segments_json = VALUES(segments_json), status = VALUES(status)",
-      [Number(userId), date, json, statusValue]
+      "INSERT INTO oncall_shifts (user_id, date, segments_json, status, oncall_type, oncall_priority) VALUES (?, ?, ?, ?, ?, ?) ON DUPLICATE KEY UPDATE segments_json = VALUES(segments_json), status = VALUES(status), oncall_type = VALUES(oncall_type), oncall_priority = VALUES(oncall_priority)",
+      [Number(userId), date, json, statusValue, oncallValue, priorityValue]
     );
   }
 
@@ -922,9 +1157,17 @@ app.post("/api/oncall_shifts", async (req, res) => {
 });
 
 app.delete("/api/oncall_shifts", async (req, res) => {
-  const { userId, date } = req.body || {};
+  const { userId, date, oncallType } = req.body || {};
   if (!userId || !date) return res.status(400).json({ error: "Missing fields" });
-  await execute("DELETE FROM oncall_shifts WHERE user_id = ? AND date = ?", [Number(userId), date]);
+  if (oncallType) {
+    await execute("DELETE FROM oncall_shifts WHERE user_id = ? AND date = ? AND oncall_type = ?", [
+      Number(userId),
+      date,
+      oncallType,
+    ]);
+  } else {
+    await execute("DELETE FROM oncall_shifts WHERE user_id = ? AND date = ?", [Number(userId), date]);
+  }
   res.json({ ok: true });
 });
 

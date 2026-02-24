@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Schichtplaner</title>
-  <link rel="stylesheet" href="styles.css?v=20260220bp" />
+  <link rel="stylesheet" href="styles.css?v=20260221e" />
 </head>
 <body>
   <div id="app">
@@ -262,19 +262,23 @@
           <div class="card">
             <div class="card-row">
               <div class="card-title" id="userWeekLabel"></div>
-              <div class="month-nav">
-                <button class="ghost" id="userPrevPage">←</button>
-                <button class="ghost" id="userNextPage">→</button>
+              <div class="card-actions">
+                <div class="week-summary" id="userWeekSummary" hidden></div>
+                <div class="month-nav">
+                  <button class="ghost nav-button" id="userPrevPage">← <span>Woche zurück</span></button>
+                  <button class="ghost nav-button" id="userNextPage"><span>Woche weiter</span> →</button>
+                </div>
               </div>
             </div>
             <div class="month-nav" id="dashboardMode">
               <button class="ghost" id="modeWork">Arbeitszeit</button>
               <button class="ghost" id="modeOncall">Rufbereitschaft</button>
+              <button class="ghost" id="modeVacation">Urlaub</button>
             </div>
             <div class="month-nav" id="userDayPager">
-              <button class="ghost" id="userPrevDay">‹</button>
+              <button class="ghost nav-button" id="userPrevDay">‹ <span>Tage zurück</span></button>
               <div class="muted">Tage</div>
-              <button class="ghost" id="userNextDay">›</button>
+              <button class="ghost nav-button" id="userNextDay"><span>Tage weiter</span> ›</button>
             </div>
             <div class="legend" id="statusLegend"></div>
             <div class="week-timeline" id="userTeamCalendar"></div>
@@ -323,15 +327,26 @@
           <div class="card">
             <div class="card-row">
               <div class="card-title" id="teamCalendarLabel"></div>
-              <div class="month-nav">
-                <button class="ghost" id="teamCalendarPrev">←</button>
-                <button class="ghost" id="teamCalendarNext">→</button>
+              <div class="card-actions">
+                <div class="week-summary" id="teamWeekSummary" hidden></div>
+                <div class="month-nav">
+                  <button class="ghost nav-button" id="teamCalendarPrev">← <span>Woche zurück</span></button>
+                  <button class="ghost nav-button" id="teamCalendarNext"><span>Woche weiter</span> →</button>
+                </div>
               </div>
             </div>
+            <div class="month-nav" id="teamCalendarMode">
+              <button class="ghost" id="teamModeWork">Arbeitszeit</button>
+              <button class="ghost" id="teamModeOncall">Rufbereitschaft</button>
+            </div>
+            <label class="field inline" id="teamSubteamFilterRow">
+              <span>Subteam</span>
+              <select id="teamSubteamFilter"></select>
+            </label>
             <div class="month-nav" id="teamCalendarDayPager">
-              <button class="ghost" id="teamCalendarPrevDay">‹</button>
+              <button class="ghost nav-button" id="teamCalendarPrevDay">‹ <span>Tage zurück</span></button>
               <div class="muted">Tage</div>
-              <button class="ghost" id="teamCalendarNextDay">›</button>
+              <button class="ghost nav-button" id="teamCalendarNextDay"><span>Tage weiter</span> ›</button>
             </div>
             <div class="legend" id="teamCalendarLegend"></div>
             <div class="week-timeline" id="teamCalendarGrid"></div>
@@ -356,83 +371,98 @@
             <p class="muted">Firmenangaben, Farben und Feiertage verwalten.</p>
           </div>
           <div class="profile-grid">
-            <div class="card">
-              <div class="card-title">Firma</div>
-              <label class="field">
-                <span>Firmenname</span>
-                <input id="settingsCompany" type="text" />
-              </label>
-              <label class="field">
-                <span>Firmenlogo (optional)</span>
-                <input id="settingsLogo" type="file" accept="image/*" />
-              </label>
-              <label class="field">
-                <span>Akzentfarbe</span>
-                <input id="settingsAccent" type="color" />
-              </label>
-              <label class="field">
-                <span>Footer-Text</span>
-                <input id="settingsFooter" type="text" />
-              </label>
-              <button class="primary" id="settingsSave">Speichern</button>
-            </div>
-
-            <div class="card">
-              <div class="card-title">Feiertage korrigieren</div>
-              <label class="field">
-                <span>Bundesland</span>
-                <select id="holidayState"></select>
-              </label>
-              <label class="field">
-                <span>Datum</span>
-                <input id="holidayDate" type="date" />
-              </label>
-              <label class="field">
-                <span>Name</span>
-                <input id="holidayName" type="text" placeholder="z. B. Sonderfeiertag" />
-              </label>
-              <div class="field-row">
-                <button class="ghost" id="holidayAdd">Feiertag setzen</button>
-                <button class="ghost" id="holidayRemove">Feiertag entfernen</button>
+            <div class="card settings-card" data-settings-card="company">
+              <div class="card-row">
+                <div class="card-title">Firma</div>
+                <button class="ghost settings-toggle" type="button">Ausklappen</button>
               </div>
-              <div class="muted">Hinweise: Entfernen überschreibt den berechneten Feiertag.</div>
-              <div class="template-grid" id="holidayList"></div>
-            </div>
-
-            <div class="card">
-              <div class="card-title">Berechnete Feiertage</div>
-              <label class="field">
-                <span>Bundesland</span>
-                <select id="holidayViewState"></select>
-              </label>
-              <div class="template-grid" id="holidayComputedList"></div>
-            </div>
-
-            <div class="card">
-              <div class="card-title">Tätigkeiten</div>
-              <p class="muted">Diese Einträge stehen in der Tätigkeitsauswahl zur Verfügung.</p>
-              <label class="field">
-                <span>Neue Tätigkeit</span>
-                <input id="activityInput" type="text" placeholder="z. B. Schulung" />
-              </label>
-              <div class="field-row">
-                <button class="ghost" id="activityAdd">Hinzufügen</button>
+              <div class="settings-card-body">
+                <div class="muted">Grunddaten der Firma, Logo, Akzentfarbe und Footer konfigurieren.</div>
+                <label class="field">
+                  <span>Firmenname</span>
+                  <input id="settingsCompany" type="text" />
+                </label>
+                <label class="field">
+                  <span>Firmenlogo (optional)</span>
+                  <input id="settingsLogo" type="file" accept="image/*" />
+                </label>
+                <label class="field">
+                  <span>Akzentfarbe</span>
+                  <input id="settingsAccent" type="color" />
+                </label>
+                <label class="field">
+                  <span>Akzentfarbe Buttons</span>
+                  <input id="settingsAccentSecondary" type="color" />
+                </label>
+                <label class="field">
+                  <span>Footer-Text</span>
+                  <input id="settingsFooter" type="text" />
+                </label>
+                <button class="primary" id="settingsSave">Speichern</button>
               </div>
-              <div class="template-grid" id="activityList"></div>
             </div>
 
-            <div class="card">
-              <div class="card-title">Rufbereitschaften</div>
-              <p class="muted">Diese Einträge stehen bei der Benutzeranlage zur Auswahl.</p>
-              <label class="field">
-                <span>Neue Bereitschaft</span>
-                <input id="oncallInput" type="text" placeholder="z. B. KC Voice" />
-              </label>
-              <div class="field-row">
-                <button class="ghost" id="oncallAdd">Hinzufügen</button>
+            <div class="card settings-card" data-settings-card="holidays-edit">
+              <div class="card-row">
+                <div class="card-title">Feiertage korrigieren</div>
+                <button class="ghost settings-toggle" type="button">Ausklappen</button>
               </div>
-              <div class="template-grid" id="oncallList"></div>
+              <div class="settings-card-body">
+                <div class="muted">Feiertage manuell überschreiben oder entfernen.</div>
+                <label class="field">
+                  <span>Bundesland</span>
+                  <select id="holidayState"></select>
+                </label>
+                <label class="field">
+                  <span>Datum</span>
+                  <input id="holidayDate" type="date" />
+                </label>
+                <label class="field">
+                  <span>Name</span>
+                  <input id="holidayName" type="text" placeholder="z. B. Sonderfeiertag" />
+                </label>
+                <div class="field-row">
+                  <button class="ghost" id="holidayAdd">Feiertag setzen</button>
+                  <button class="ghost" id="holidayRemove">Feiertag entfernen</button>
+                </div>
+                <div class="muted">Hinweise: Entfernen überschreibt den berechneten Feiertag.</div>
+                <div class="template-grid" id="holidayList"></div>
+              </div>
             </div>
+
+            <div class="card settings-card" data-settings-card="holidays-computed">
+              <div class="card-row">
+                <div class="card-title">Berechnete Feiertage</div>
+                <button class="ghost settings-toggle" type="button">Ausklappen</button>
+              </div>
+              <div class="settings-card-body">
+                <div class="muted">Übersicht der automatisch berechneten Feiertage.</div>
+                <label class="field">
+                  <span>Bundesland</span>
+                  <select id="holidayViewState"></select>
+                </label>
+                <div class="template-grid" id="holidayComputedList"></div>
+              </div>
+            </div>
+
+            <div class="card settings-card" data-settings-card="activities">
+              <div class="card-row">
+                <div class="card-title">Tätigkeiten</div>
+                <button class="ghost settings-toggle" type="button">Ausklappen</button>
+              </div>
+              <div class="settings-card-body">
+                <div class="muted">Tätigkeiten für die Arbeitszeit-Auswahl verwalten.</div>
+                <label class="field">
+                  <span>Neue Tätigkeit</span>
+                  <input id="activityInput" type="text" placeholder="z. B. Schulung" />
+                </label>
+                <div class="field-row">
+                  <button class="ghost" id="activityAdd">Hinzufügen</button>
+                </div>
+                <div class="template-grid" id="activityList"></div>
+              </div>
+            </div>
+
           </div>
         </section>
 
@@ -453,20 +483,58 @@
               <button class="primary" id="addMember">+ Benutzer hinzufügen</button>
             </div>
           </div>
-          <div class="card" id="teamCoreCard">
-            <div class="card-title">Kernarbeitszeit (Team)</div>
-            <div class="field-row">
-              <label class="field inline">
-                <span>Von</span>
-                <input id="teamCoreStart" type="time" />
-              </label>
-              <label class="field inline">
-                <span>Bis</span>
-                <input id="teamCoreEnd" type="time" />
-              </label>
-              <button class="primary" id="teamCoreSave">Speichern</button>
+          <div class="card collapsible-card" id="teamCoreCard">
+            <div class="card-row">
+              <div class="card-title">Kernarbeitszeit (Team)</div>
+              <button class="ghost" id="teamCoreToggle" type="button">Ausklappen</button>
             </div>
-            <div class="muted">Gilt für die Teamkalender-Ansicht.</div>
+            <div class="collapsible-body" id="teamCoreBody">
+              <div class="field-row">
+                <label class="field inline">
+                  <span>Von</span>
+                  <input id="teamCoreStart" type="time" />
+                </label>
+                <label class="field inline">
+                  <span>Bis</span>
+                  <input id="teamCoreEnd" type="time" />
+                </label>
+                <button class="primary" id="teamCoreSave">Speichern</button>
+              </div>
+              <div class="muted">Gilt für die Teamkalender-Ansicht.</div>
+            </div>
+          </div>
+          <div class="card" id="oncallCoreCard">
+            <div class="card-row oncall-core-header">
+              <div>
+                <div class="card-title">Kernarbeitszeit (Rufbereitschaft)</div>
+                <div class="muted">Pro Rufbereitschaftsart definieren.</div>
+              </div>
+              <button class="ghost" id="oncallCoreToggle" type="button">Ausklappen</button>
+            </div>
+            <div class="oncall-core-body" id="oncallCoreBody">
+              <div class="oncall-core-grid" id="oncallCoreList"></div>
+              <div class="field-row">
+                <button class="primary" id="oncallCoreSave">Speichern</button>
+                <div class="muted" id="oncallCoreNotice"></div>
+              </div>
+            </div>
+          </div>
+          <div class="card collapsible-card" id="oncallOptionsCard">
+            <div class="card-row">
+              <div class="card-title">Rufbereitschaften</div>
+              <button class="ghost" id="oncallOptionsToggle" type="button">Ausklappen</button>
+            </div>
+            <div class="collapsible-body" id="oncallOptionsBody">
+              <div class="muted">Rufbereitschaftsarten inkl. Farben und Prio-Option verwalten.</div>
+              <label class="field">
+                <span>Neue Bereitschaft</span>
+                <input id="oncallInput" type="text" placeholder="z. B. KC Voice" />
+              </label>
+              <div class="field-row">
+                <button class="ghost" id="oncallAdd">Hinzufügen</button>
+              </div>
+              <div class="template-grid" id="oncallList"></div>
+            </div>
           </div>
           <div class="team-grid" id="teamList"></div>
           <div class="card swap-requests" id="swapRequestsCard">
@@ -475,8 +543,13 @@
                 <div class="card-title">Schichttausch-Anfragen</div>
                 <div class="muted">Anfragen prüfen und freigeben oder ablehnen.</div>
               </div>
-              <div class="muted" id="swapCount">0 offen</div>
+              <div class="field inline">
+                <span>Schichttausch</span>
+                <input type="checkbox" id="swapToggle" />
+                <span class="muted">Anfragen für dieses Team erlauben</span>
+              </div>
             </div>
+            <div class="muted" id="swapCount">0 offen</div>
             <div class="swap-list" id="swapList"></div>
           </div>
         </section>
@@ -490,6 +563,10 @@
           <div class="card templates">
             <div class="card-title">Schicht-Templates</div>
             <div class="muted">Kernarbeitszeit: 07:00 - 20:00 Uhr</div>
+            <label class="field inline">
+              <span>Status (Template)</span>
+              <select id="templateStatusSelect"></select>
+            </label>
             <div class="template-grid" id="templateGrid"></div>
             <div class="template-actions">
               <button class="ghost" id="applyTemplate">Template auf Monat anwenden</button>
@@ -510,6 +587,10 @@
               </div>
             </div>
             <div class="calendar-controls">
+              <button class="ghost" id="calendarViewMonth">Monat</button>
+              <button class="ghost" id="calendarViewWeek">Woche</button>
+            </div>
+            <div class="calendar-controls">
               <button class="ghost" id="clearMonth">Monat leeren</button>
             </div>
             <div class="calendar-grid" id="calendarGrid"></div>
@@ -528,12 +609,32 @@
 
           <div class="card templates">
             <div class="card-title">Rufbereitschafts-Templates</div>
-            <div class="muted">Kernarbeitszeit: 07:00 - 20:00 Uhr</div>
-            <div class="template-grid" id="oncallTemplateGrid"></div>
+            <div class="muted">Rufbereitschaftsart wählen und auf die Kalenderwoche anwenden.</div>
+            <label class="field inline">
+              <span>Rufbereitschaftsart</span>
+              <select id="oncallTemplateType"></select>
+            </label>
+            <label class="field inline">
+              <span>Kalenderwoche</span>
+              <select id="oncallWeekSelect"></select>
+            </label>
+            <label class="field inline" id="oncallTemplatePriorityRow" hidden>
+              <span>Priorität</span>
+              <select id="oncallTemplatePriority">
+                <option value="Prio1">Prio1</option>
+                <option value="Prio2">Prio2</option>
+              </select>
+            </label>
             <div class="template-actions">
-              <button class="ghost" id="oncallApplyTemplate">Template auf Monat anwenden</button>
+              <button class="ghost" id="oncallApplyTemplate">Rufbereitschaft auf Kalenderwoche anwenden</button>
               <div class="muted" id="oncallTemplateNotice"></div>
             </div>
+          </div>
+
+          <div class="card">
+            <div class="card-title">Rufbereitschaft-Tausch</div>
+            <div class="muted">Anfragen von Kollegen mit gleicher Rufbereitschaft.</div>
+            <div class="swap-list" id="oncallSwapList"></div>
           </div>
 
           <div class="card calendar">
@@ -550,7 +651,35 @@
             </div>
             <div class="calendar-grid" id="oncallCalendarGrid"></div>
             <div class="calendar-footer">
-              <button class="ghost" id="oncallClearMonth">Monat löschen</button>
+              <button class="ghost" id="oncallClearMonth">Woche löschen</button>
+            </div>
+          </div>
+        </section>
+
+        <section class="page" id="pageVacation" hidden>
+          <div class="page-header">
+            <h3>Mein Urlaub</h3>
+            <p class="muted">Urlaubsarten auswählen und auf eine Kalenderwoche anwenden.</p>
+          </div>
+
+          <div class="card templates">
+            <div class="card-title">Urlaubs-Template</div>
+            <div class="muted">Urlaubsart wählen und auf die Kalenderwoche anwenden.</div>
+            <label class="field inline">
+              <span>Urlaubsart</span>
+              <select id="vacationType">
+                <option value="Urlaub">Ganzer Tag</option>
+                <option value="Urlaub halber Tag">Halber Tag</option>
+                <option value="Sonderurlaub">Sonderurlaub</option>
+              </select>
+            </label>
+            <label class="field inline">
+              <span>Kalenderwoche</span>
+              <select id="vacationWeekSelect"></select>
+            </label>
+            <div class="template-actions">
+              <button class="ghost" id="vacationApplyTemplate">Urlaub auf Kalenderwoche anwenden</button>
+              <div class="muted" id="vacationTemplateNotice"></div>
             </div>
           </div>
         </section>
@@ -567,7 +696,7 @@
               <div class="field-row">
                 <label class="field inline">
                   <span>Soll-Stunden</span>
-                  <input id="weeklyTarget" type="number" min="1" max="60" step="0.5" value="38.5" />
+                  <input id="weeklyTarget" type="number" min="1" max="60" step="0.5" value="40" />
                 </label>
                 <div class="stat" id="weeklyStatus">Diese Woche: 0h (0h zu wenig)</div>
               </div>
@@ -584,10 +713,11 @@
             <div class="card">
               <div class="card-title">Passwort ändern</div>
               <div class="field-row">
-                <input type="password" placeholder="Aktuelles Passwort" />
-                <input type="password" placeholder="Neues Passwort" />
-                <button class="primary">Speichern</button>
+                <input id="currentPassword" type="password" placeholder="Aktuelles Passwort" />
+                <input id="newPassword" type="password" placeholder="Neues Passwort" />
+                <button class="primary" id="savePassword" type="button">Speichern</button>
               </div>
+              <div class="muted" id="passwordNotice"></div>
             </div>
 
             <div class="card" id="printCard">
@@ -640,10 +770,15 @@
           <button class="ghost" id="closeModal">×</button>
         </div>
         <div class="modal-body">
+          <label class="field" id="dayMemberRow" hidden>
+            <span>Mitarbeiter</span>
+            <select id="dayMemberSelect"></select>
+          </label>
+          <div class="muted" id="modalMemberHint" hidden></div>
           <div class="segments" id="segments"></div>
           <button class="ghost" id="addSegment">+ Zeitblock hinzufügen</button>
-          <div class="modal-summary">
-            <div>Pause: 0:30 h</div>
+          <div class="modal-summary" id="modalSummary">
+            <div id="pauseLabel">Pause: 0:30 h</div>
             <div id="dayTotal">Gesamt: 0h</div>
           </div>
           <label class="field">
@@ -659,10 +794,23 @@
               <option value="Rufbereitschaft Fraud">Rufbereitschaft Fraud</option>
             </select>
           </label>
+          <label class="field" id="oncallStatusRow" hidden>
+            <span>Rufbereitschaft</span>
+            <select id="oncallStatus"></select>
+          </label>
+          <label class="field" id="oncallPriorityRow" hidden>
+            <span>Priorität</span>
+            <select id="oncallPriority">
+              <option value="Prio1">Prio1</option>
+              <option value="Prio2">Prio2</option>
+            </select>
+          </label>
           <div class="muted" id="holidayNotice"></div>
+          <div class="muted" id="daySaveNotice"></div>
         </div>
         <div class="modal-footer">
           <button class="ghost" id="deleteDay">Tag löschen</button>
+          <button class="ghost" id="requestOncallSwap">Vertretung anfragen</button>
           <button class="primary" id="saveDay">Speichern</button>
         </div>
       </div>
@@ -738,6 +886,10 @@
             <span>Team</span>
             <select id="memberTeam">
             </select>
+          </label>
+          <label class="field" id="memberSubteamField">
+            <span>Subteam</span>
+            <select id="memberSubteam"></select>
           </label>
           <label class="field">
             <span>Rufbereitschaft</span>
@@ -876,6 +1028,6 @@
     </div>
   </div>
 
-  <script src="app.js?v=20260220bs"></script>
+  <script src="app.js?v=20260223t"></script>
 </body>
 </html>
