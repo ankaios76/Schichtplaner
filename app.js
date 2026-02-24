@@ -4031,7 +4031,7 @@ function handleLogin(event) {
       appView.hidden = false;
 
       const roleLabel = member.systemRole === "supervisor" ? "Supervisor" : member.systemRole === "admin" ? "Teamleiter" : "Benutzer";
-      greeting.textContent = `Hallo, ${member.name}`;
+      greeting.textContent = `Moin, ${member.name}`;
       todayText.textContent = formatDate(new Date());
       sidebarName.textContent = member.name;
       sidebarRole.textContent = roleLabel;
