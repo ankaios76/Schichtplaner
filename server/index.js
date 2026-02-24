@@ -27,6 +27,7 @@ const BOOTSTRAP_MODE = process.env.BOOTSTRAP === "1" || !DB_CLIENT;
 
 app.use(cors());
 app.use(express.json({ limit: "4mb" }));
+app.use(express.static(path.join(SERVER_DIR, "..")));
 
 let db;
 
