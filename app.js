@@ -119,8 +119,6 @@ const userTeamCalendar = document.getElementById("userTeamCalendar");
 const userWeekLabel = document.getElementById("userWeekLabel");
 const userPrevPage = document.getElementById("userPrevPage");
 const userNextPage = document.getElementById("userNextPage");
-const userPrevDay = document.getElementById("userPrevDay");
-const userNextDay = document.getElementById("userNextDay");
 const userDayPager = document.getElementById("userDayPager");
 const userWeekSummary = document.getElementById("userWeekSummary");
 const dashboardMode = document.getElementById("dashboardMode");
@@ -137,8 +135,6 @@ const teamModeWork = document.getElementById("teamModeWork");
 const teamModeOncall = document.getElementById("teamModeOncall");
 const teamSubteamFilter = document.getElementById("teamSubteamFilter");
 const teamSubteamFilterRow = document.getElementById("teamSubteamFilterRow");
-const teamCalendarPrevDay = document.getElementById("teamCalendarPrevDay");
-const teamCalendarNextDay = document.getElementById("teamCalendarNextDay");
 const teamCalendarDayPager = document.getElementById("teamCalendarDayPager");
 const teamWeekSummary = document.getElementById("teamWeekSummary");
 const teamCoreCard = document.getElementById("teamCoreCard");
@@ -1041,8 +1037,6 @@ function renderTeamCalendar() {
   const visibleDays = days.slice(state.teamCalendarWeekOffset, state.teamCalendarWeekOffset + daysPerPage);
 
   if (teamCalendarDayPager) teamCalendarDayPager.hidden = maxOffset === 0;
-  if (teamCalendarPrevDay) teamCalendarPrevDay.disabled = state.teamCalendarWeekOffset === 0;
-  if (teamCalendarNextDay) teamCalendarNextDay.disabled = state.teamCalendarWeekOffset >= maxOffset;
 
   const usersWithShifts = new Map();
   days.forEach((date) => {
@@ -3639,8 +3633,6 @@ function renderUserDashboard() {
   const visibleDays = days.slice(state.userWeekOffset, state.userWeekOffset + daysPerPage);
 
   if (userDayPager) userDayPager.hidden = maxOffset === 0;
-  if (userPrevDay) userPrevDay.disabled = state.userWeekOffset === 0;
-  if (userNextDay) userNextDay.disabled = state.userWeekOffset >= maxOffset;
 
   const usersWithShifts = new Map();
   days.forEach((date) => {
@@ -4787,19 +4779,6 @@ if (userNextPage) {
   });
 }
 
-if (userPrevDay) {
-  userPrevDay.addEventListener("click", () => {
-    state.userWeekOffset = Math.max(0, state.userWeekOffset - state.userWeekPageSize);
-    renderUserDashboard();
-  });
-}
-
-if (userNextDay) {
-  userNextDay.addEventListener("click", () => {
-    state.userWeekOffset = Math.min(6, state.userWeekOffset + state.userWeekPageSize);
-    renderUserDashboard();
-  });
-}
 
 function setDashboardMode(mode) {
   if (state.dashboardMode === mode) return;
@@ -4977,19 +4956,6 @@ if (teamCalendarNext) {
   });
 }
 
-if (teamCalendarPrevDay) {
-  teamCalendarPrevDay.addEventListener("click", () => {
-    state.teamCalendarWeekOffset = Math.max(0, state.teamCalendarWeekOffset - state.teamCalendarWeekPageSize);
-    renderTeamCalendar();
-  });
-}
-
-if (teamCalendarNextDay) {
-  teamCalendarNextDay.addEventListener("click", () => {
-    state.teamCalendarWeekOffset = Math.min(6, state.teamCalendarWeekOffset + state.teamCalendarWeekPageSize);
-    renderTeamCalendar();
-  });
-}
 
 segmentsContainer.addEventListener("input", (event) => {
   const target = event.target;
