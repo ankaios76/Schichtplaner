@@ -1103,7 +1103,15 @@ function renderTeamCalendar() {
   const daysPerPage = Math.max(1, Math.floor(containerWidth / dayWidth));
   state.teamCalendarWeekPageSize = daysPerPage;
   const maxOffset = Math.max(0, 7 - daysPerPage);
-  state.teamCalendarWeekOffset = Math.min(state.teamCalendarWeekOffset, maxOffset);
+  const today = new Date();
+  const todayKey = dateKey(today);
+  const todayIndex = days.findIndex((d) => dateKey(d) === todayKey);
+  if (todayIndex >= 0) {
+    const targetOffset = Math.max(0, Math.min(todayIndex - Math.floor(daysPerPage / 2), maxOffset));
+    state.teamCalendarWeekOffset = targetOffset;
+  } else {
+    state.teamCalendarWeekOffset = Math.min(state.teamCalendarWeekOffset, maxOffset);
+  }
   const visibleDays = days.slice(state.teamCalendarWeekOffset, state.teamCalendarWeekOffset + daysPerPage);
 
   if (teamCalendarDayPager) teamCalendarDayPager.hidden = false;
@@ -3698,7 +3706,15 @@ function renderUserDashboard() {
   const daysPerPage = Math.max(1, Math.floor(containerWidth / dayWidth));
   state.userWeekPageSize = daysPerPage;
   const maxOffset = Math.max(0, 7 - daysPerPage);
-  state.userWeekOffset = Math.min(state.userWeekOffset, maxOffset);
+  const today = new Date();
+  const todayKey = dateKey(today);
+  const todayIndex = days.findIndex((d) => dateKey(d) === todayKey);
+  if (todayIndex >= 0) {
+    const targetOffset = Math.max(0, Math.min(todayIndex - Math.floor(daysPerPage / 2), maxOffset));
+    state.userWeekOffset = targetOffset;
+  } else {
+    state.userWeekOffset = Math.min(state.userWeekOffset, maxOffset);
+  }
   const visibleDays = days.slice(state.userWeekOffset, state.userWeekOffset + daysPerPage);
 
   if (userDayPager) userDayPager.hidden = false;
