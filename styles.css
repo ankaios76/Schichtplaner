@@ -376,6 +376,11 @@ button.ghost {
   padding-right: 18px;
 }
 
+.week-summary[hidden] {
+  display: flex;
+  visibility: hidden;
+}
+
 .card-row-sub {
   justify-content: flex-end;
   margin-top: 4px;
