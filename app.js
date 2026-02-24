@@ -117,6 +117,8 @@ const pageAdminDashboard = document.getElementById("pageAdminDashboard");
 const pageUserDashboard = document.getElementById("pageUserDashboard");
 const userTeamCalendar = document.getElementById("userTeamCalendar");
 const userWeekLabel = document.getElementById("userWeekLabel");
+const userPrevMonth = document.getElementById("userPrevMonth");
+const userNextMonth = document.getElementById("userNextMonth");
 const userPrevPage = document.getElementById("userPrevPage");
 const userNextPage = document.getElementById("userNextPage");
 const userDayPager = document.getElementById("userDayPager");
@@ -136,6 +138,8 @@ const teamModeOncall = document.getElementById("teamModeOncall");
 const teamSubteamFilter = document.getElementById("teamSubteamFilter");
 const teamSubteamFilterRow = document.getElementById("teamSubteamFilterRow");
 const teamCalendarDayPager = document.getElementById("teamCalendarDayPager");
+const teamCalendarPrevMonth = document.getElementById("teamCalendarPrevMonth");
+const teamCalendarNextMonth = document.getElementById("teamCalendarNextMonth");
 const teamCalendarPrev = document.getElementById("teamCalendarPrev");
 const teamCalendarNext = document.getElementById("teamCalendarNext");
 const teamCalendarPrevDay = document.getElementById("teamCalendarPrevDay");
@@ -606,6 +610,16 @@ async function moveUserCalendarDay(delta) {
   renderUserDashboard();
 }
 
+async function moveUserCalendarMonth(delta) {
+  if (!state.userWeekStart) state.userWeekStart = getWeekStart(new Date());
+  const base = new Date(state.userWeekStart);
+  base.setMonth(base.getMonth() + delta);
+  state.userWeekStart = getWeekStart(base);
+  state.userWeekOffset = 0;
+  await loadTeamWeekShifts();
+  renderUserDashboard();
+}
+
 if (teamCalendarPrev) {
   teamCalendarPrev.addEventListener("click", async () => {
     if (!state.teamCalendarWeekStart) state.teamCalendarWeekStart = getWeekStart(new Date());
@@ -620,6 +634,30 @@ if (teamCalendarNext) {
   teamCalendarNext.addEventListener("click", async () => {
     if (!state.teamCalendarWeekStart) state.teamCalendarWeekStart = getWeekStart(new Date());
     state.teamCalendarWeekStart.setDate(state.teamCalendarWeekStart.getDate() + 7);
+    state.teamCalendarWeekOffset = 0;
+    await loadTeamWeekShifts();
+    renderTeamCalendar();
+  });
+}
+
+if (teamCalendarPrevMonth) {
+  teamCalendarPrevMonth.addEventListener("click", async () => {
+    if (!state.teamCalendarWeekStart) state.teamCalendarWeekStart = getWeekStart(new Date());
+    const base = new Date(state.teamCalendarWeekStart);
+    base.setMonth(base.getMonth() - 1);
+    state.teamCalendarWeekStart = getWeekStart(base);
+    state.teamCalendarWeekOffset = 0;
+    await loadTeamWeekShifts();
+    renderTeamCalendar();
+  });
+}
+
+if (teamCalendarNextMonth) {
+  teamCalendarNextMonth.addEventListener("click", async () => {
+    if (!state.teamCalendarWeekStart) state.teamCalendarWeekStart = getWeekStart(new Date());
+    const base = new Date(state.teamCalendarWeekStart);
+    base.setMonth(base.getMonth() + 1);
+    state.teamCalendarWeekStart = getWeekStart(base);
     state.teamCalendarWeekOffset = 0;
     await loadTeamWeekShifts();
     renderTeamCalendar();
@@ -4892,6 +4930,18 @@ if (userNextPage) {
     state.userWeekOffset = 0;
     await loadTeamWeekShifts();
     renderUserDashboard();
+  });
+}
+
+if (userPrevMonth) {
+  userPrevMonth.addEventListener("click", async () => {
+    await moveUserCalendarMonth(-1);
+  });
+}
+
+if (userNextMonth) {
+  userNextMonth.addEventListener("click", async () => {
+    await moveUserCalendarMonth(1);
   });
 }
 

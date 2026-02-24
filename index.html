@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Schichtplaner</title>
-  <link rel="stylesheet" href="styles.css?v=20260224a" />
+  <link rel="stylesheet" href="styles.css?v=20260224b" />
 </head>
 <body>
   <div id="app">
@@ -268,9 +268,15 @@
               <div class="card-actions">
                 <div class="week-summary" id="userWeekSummary" hidden></div>
                 <div class="month-nav">
-                  <button class="ghost nav-button" id="userPrevPage">← <span>Woche zurück</span></button>
-                  <button class="ghost nav-button" id="userNextPage"><span>Woche weiter</span> →</button>
+                  <button class="ghost nav-button" id="userPrevMonth">← <span>Monat zurück</span></button>
+                  <button class="ghost nav-button" id="userNextMonth"><span>Monat weiter</span> →</button>
                 </div>
+              </div>
+            </div>
+            <div class="card-row card-row-sub">
+              <div class="month-nav">
+                <button class="ghost nav-button" id="userPrevPage">← <span>Woche zurück</span></button>
+                <button class="ghost nav-button" id="userNextPage"><span>Woche weiter</span> →</button>
               </div>
             </div>
             <div class="card-row card-row-sub">
@@ -334,9 +340,15 @@
               <div class="card-actions">
                 <div class="week-summary" id="teamWeekSummary" hidden></div>
                 <div class="month-nav">
-                  <button class="ghost nav-button" id="teamCalendarPrev">← <span>Woche zurück</span></button>
-                  <button class="ghost nav-button" id="teamCalendarNext"><span>Woche weiter</span> →</button>
+                  <button class="ghost nav-button" id="teamCalendarPrevMonth">← <span>Monat zurück</span></button>
+                  <button class="ghost nav-button" id="teamCalendarNextMonth"><span>Monat weiter</span> →</button>
                 </div>
+              </div>
+            </div>
+            <div class="card-row card-row-sub">
+              <div class="month-nav">
+                <button class="ghost nav-button" id="teamCalendarPrev">← <span>Woche zurück</span></button>
+                <button class="ghost nav-button" id="teamCalendarNext"><span>Woche weiter</span> →</button>
               </div>
             </div>
             <div class="card-row card-row-sub">
@@ -1033,6 +1045,6 @@
     </div>
   </div>
 
-  <script src="app.js?v=20260224b"></script>
+  <script src="app.js?v=20260224c"></script>
 </body>
 </html>
