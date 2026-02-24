@@ -530,6 +530,16 @@ async function moveTeamCalendarDay(delta) {
   const maxOffset = Math.max(0, 7 - daysPerPage);
   const nextOffset = state.teamCalendarWeekOffset + delta;
 
+  if (maxOffset === 0) {
+    const nextStart = new Date(state.teamCalendarWeekStart);
+    nextStart.setDate(nextStart.getDate() + delta);
+    state.teamCalendarWeekStart = nextStart;
+    state.teamCalendarWeekOffset = 0;
+    await loadTeamWeekShifts();
+    renderTeamCalendar();
+    return;
+  }
+
   if (nextOffset < 0) {
     const prevWeek = new Date(state.teamCalendarWeekStart);
     prevWeek.setDate(prevWeek.getDate() - 7);
@@ -1100,7 +1110,7 @@ function renderTeamCalendar() {
   state.teamCalendarWeekOffset = Math.min(state.teamCalendarWeekOffset, maxOffset);
   const visibleDays = days.slice(state.teamCalendarWeekOffset, state.teamCalendarWeekOffset + daysPerPage);
 
-  if (teamCalendarDayPager) teamCalendarDayPager.hidden = maxOffset === 0;
+  if (teamCalendarDayPager) teamCalendarDayPager.hidden = false;
 
   const usersWithShifts = new Map();
   days.forEach((date) => {
