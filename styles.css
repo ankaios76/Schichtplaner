@@ -372,6 +372,7 @@ button.ghost {
   gap: 8px;
   padding: 2px 0;
   min-width: 220px;
+  flex: 0 0 220px;
   border-right: 1px solid #e6eaee;
   padding-right: 18px;
 }
