@@ -117,14 +117,11 @@ const pageAdminDashboard = document.getElementById("pageAdminDashboard");
 const pageUserDashboard = document.getElementById("pageUserDashboard");
 const userTeamCalendar = document.getElementById("userTeamCalendar");
 const userWeekLabel = document.getElementById("userWeekLabel");
-const userPrevMonth = document.getElementById("userPrevMonth");
-const userNextMonth = document.getElementById("userNextMonth");
 const userPrevPage = document.getElementById("userPrevPage");
 const userNextPage = document.getElementById("userNextPage");
 const userDayPager = document.getElementById("userDayPager");
 const userPrevDay = document.getElementById("userPrevDay");
 const userNextDay = document.getElementById("userNextDay");
-const userWeekSummary = document.getElementById("userWeekSummary");
 const dashboardMode = document.getElementById("dashboardMode");
 const modeWork = document.getElementById("modeWork");
 const modeOncall = document.getElementById("modeOncall");
@@ -138,13 +135,10 @@ const teamModeOncall = document.getElementById("teamModeOncall");
 const teamSubteamFilter = document.getElementById("teamSubteamFilter");
 const teamSubteamFilterRow = document.getElementById("teamSubteamFilterRow");
 const teamCalendarDayPager = document.getElementById("teamCalendarDayPager");
-const teamCalendarPrevMonth = document.getElementById("teamCalendarPrevMonth");
-const teamCalendarNextMonth = document.getElementById("teamCalendarNextMonth");
 const teamCalendarPrev = document.getElementById("teamCalendarPrev");
 const teamCalendarNext = document.getElementById("teamCalendarNext");
 const teamCalendarPrevDay = document.getElementById("teamCalendarPrevDay");
 const teamCalendarNextDay = document.getElementById("teamCalendarNextDay");
-const teamWeekSummary = document.getElementById("teamWeekSummary");
 const teamCoreCard = document.getElementById("teamCoreCard");
 const teamCoreStart = document.getElementById("teamCoreStart");
 const teamCoreEnd = document.getElementById("teamCoreEnd");
@@ -610,16 +604,6 @@ async function moveUserCalendarDay(delta) {
   renderUserDashboard();
 }
 
-async function moveUserCalendarMonth(delta) {
-  if (!state.userWeekStart) state.userWeekStart = getWeekStart(new Date());
-  const base = new Date(state.userWeekStart);
-  base.setMonth(base.getMonth() + delta);
-  state.userWeekStart = getWeekStart(base);
-  state.userWeekOffset = 0;
-  await loadTeamWeekShifts();
-  renderUserDashboard();
-}
-
 if (teamCalendarPrev) {
   teamCalendarPrev.addEventListener("click", async () => {
     if (!state.teamCalendarWeekStart) state.teamCalendarWeekStart = getWeekStart(new Date());
@@ -634,30 +618,6 @@ if (teamCalendarNext) {
   teamCalendarNext.addEventListener("click", async () => {
     if (!state.teamCalendarWeekStart) state.teamCalendarWeekStart = getWeekStart(new Date());
     state.teamCalendarWeekStart.setDate(state.teamCalendarWeekStart.getDate() + 7);
-    state.teamCalendarWeekOffset = 0;
-    await loadTeamWeekShifts();
-    renderTeamCalendar();
-  });
-}
-
-if (teamCalendarPrevMonth) {
-  teamCalendarPrevMonth.addEventListener("click", async () => {
-    if (!state.teamCalendarWeekStart) state.teamCalendarWeekStart = getWeekStart(new Date());
-    const base = new Date(state.teamCalendarWeekStart);
-    base.setMonth(base.getMonth() - 1);
-    state.teamCalendarWeekStart = getWeekStart(base);
-    state.teamCalendarWeekOffset = 0;
-    await loadTeamWeekShifts();
-    renderTeamCalendar();
-  });
-}
-
-if (teamCalendarNextMonth) {
-  teamCalendarNextMonth.addEventListener("click", async () => {
-    if (!state.teamCalendarWeekStart) state.teamCalendarWeekStart = getWeekStart(new Date());
-    const base = new Date(state.teamCalendarWeekStart);
-    base.setMonth(base.getMonth() + 1);
-    state.teamCalendarWeekStart = getWeekStart(base);
     state.teamCalendarWeekOffset = 0;
     await loadTeamWeekShifts();
     renderTeamCalendar();
@@ -727,49 +687,7 @@ function getOncallEntryByType(dateKeyValue, type) {
   return entries.find((entry) => (entry.oncallType || entry.status) === type) || null;
 }
 
-function renderWeekSummary(container, members, days, workMap) {
-  if (!container) return;
-  const rangeKeys = days.map((d) => dateKey(d));
-  const vacationNames = new Set(["urlaub", "sonderurlaub", "urlaub halber tag"]);
-  const missingShift = [];
-  const onVacation = [];
-
-  members.forEach((member) => {
-    let hasShift = false;
-    let hasVacation = false;
-    rangeKeys.forEach((key) => {
-      const entries = workMap[key] || [];
-      const entry = entries.find((e) => e.userId === member.id);
-      if (entry && Array.isArray(entry.segments) && entry.segments.length) hasShift = true;
-      const status = String(entry && entry.status ? entry.status : "").toLowerCase();
-      if (status && vacationNames.has(status)) hasVacation = true;
-    });
-    if (!hasShift) missingShift.push(member);
-    if (hasVacation) onVacation.push(member);
-  });
-
-  const renderAvatars = (list) =>
-    list
-      .map((member) => {
-        const avatarUrl = member.avatar || "";
-        const avatarStyle = avatarUrl ? `style="background-image: url('${avatarUrl}');"` : "";
-        const avatarText = avatarUrl ? "" : initials(member.name);
-        return `<div class="summary-avatar" ${avatarStyle} title="${member.name}">${avatarText}</div>`;
-      })
-      .join("");
-
-  if (!missingShift.length && !onVacation.length) {
-    container.hidden = true;
-    container.innerHTML = "";
-    return;
-  }
-
-  container.hidden = false;
-  container.innerHTML = `
-    ${missingShift.length ? `<div class="summary-group"><span class="summary-label">Keine Arbeitszeit eingetragen</span><div class="summary-avatars">${renderAvatars(missingShift)}</div></div>` : ""}
-    ${onVacation.length ? `<div class="summary-group"><span class="summary-label">Urlaub</span><div class="summary-avatars">${renderAvatars(onVacation)}</div></div>` : ""}
-  `;
-}
+function renderWeekSummary() {}
 
 function isWeekendDate(date) {
   const day = date.getDay();
@@ -1177,8 +1095,6 @@ function renderTeamCalendar() {
       })
       .catch(() => {});
   }
-
-  renderWeekSummary(teamWeekSummary, summaryMembers, days, state.teamWeekShiftsWork || state.teamWeekShifts || {});
 
   teamCalendarGrid.innerHTML = "";
 
@@ -3776,7 +3692,6 @@ function renderUserDashboard() {
       .catch(() => {});
   }
 
-  renderWeekSummary(userWeekSummary, members, days, state.teamWeekShiftsWork || state.teamWeekShifts || {});
   userTeamCalendar.innerHTML = "";
   const dayWidth = 260;
   const containerWidth = userTeamCalendar.getBoundingClientRect().width || 780;
@@ -4930,18 +4845,6 @@ if (userNextPage) {
     state.userWeekOffset = 0;
     await loadTeamWeekShifts();
     renderUserDashboard();
-  });
-}
-
-if (userPrevMonth) {
-  userPrevMonth.addEventListener("click", async () => {
-    await moveUserCalendarMonth(-1);
-  });
-}
-
-if (userNextMonth) {
-  userNextMonth.addEventListener("click", async () => {
-    await moveUserCalendarMonth(1);
   });
 }
 
