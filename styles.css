@@ -3,9 +3,9 @@
   --panel: #ffffff;
   --text: #1e1d1f;
   --muted: #80868b;
-  --accent: #8b0f3a;
-  --accent-dark: #6f0c2f;
-  --accent-soft: #f2dfe6;
+  --accent: #6ed6e1;
+  --accent-dark: #56a7b0;
+  --accent-soft: #dbf5f8;
   --accent-2: var(--accent);
   --accent-2-dark: var(--accent-dark);
   --accent-2-soft: var(--accent-soft);
