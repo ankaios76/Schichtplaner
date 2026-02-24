@@ -364,6 +364,12 @@ button.ghost {
   font-size: 0.85rem;
   min-width: 160px;
   white-space: nowrap;
+  background: var(--accent-2);
+  color: #fff;
+}
+
+.nav-button:hover {
+  background: var(--accent-2-dark);
 }
 
 .card-row-sub {
