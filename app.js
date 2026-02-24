@@ -120,6 +120,8 @@ const userWeekLabel = document.getElementById("userWeekLabel");
 const userPrevPage = document.getElementById("userPrevPage");
 const userNextPage = document.getElementById("userNextPage");
 const userDayPager = document.getElementById("userDayPager");
+const userPrevDay = document.getElementById("userPrevDay");
+const userNextDay = document.getElementById("userNextDay");
 const userWeekSummary = document.getElementById("userWeekSummary");
 const dashboardMode = document.getElementById("dashboardMode");
 const modeWork = document.getElementById("modeWork");
@@ -562,6 +564,46 @@ async function moveTeamCalendarDay(delta) {
 
   state.teamCalendarWeekOffset = nextOffset;
   renderTeamCalendar();
+}
+
+async function moveUserCalendarDay(delta) {
+  if (!state.userWeekStart) state.userWeekStart = getWeekStart(new Date());
+  const daysPerPage = state.userWeekPageSize || 1;
+  const maxOffset = Math.max(0, 7 - daysPerPage);
+  const nextOffset = state.userWeekOffset + delta;
+
+  if (maxOffset === 0) {
+    const nextStart = new Date(state.userWeekStart);
+    nextStart.setDate(nextStart.getDate() + delta);
+    state.userWeekStart = nextStart;
+    state.userWeekOffset = 0;
+    await loadTeamWeekShifts();
+    renderUserDashboard();
+    return;
+  }
+
+  if (nextOffset < 0) {
+    const prevWeek = new Date(state.userWeekStart);
+    prevWeek.setDate(prevWeek.getDate() - 7);
+    state.userWeekStart = prevWeek;
+    state.userWeekOffset = maxOffset;
+    await loadTeamWeekShifts();
+    renderUserDashboard();
+    return;
+  }
+
+  if (nextOffset > maxOffset) {
+    const nextWeek = new Date(state.userWeekStart);
+    nextWeek.setDate(nextWeek.getDate() + 7);
+    state.userWeekStart = nextWeek;
+    state.userWeekOffset = 0;
+    await loadTeamWeekShifts();
+    renderUserDashboard();
+    return;
+  }
+
+  state.userWeekOffset = nextOffset;
+  renderUserDashboard();
 }
 
 if (teamCalendarPrev) {
@@ -3706,7 +3748,7 @@ function renderUserDashboard() {
   state.userWeekOffset = Math.min(state.userWeekOffset, maxOffset);
   const visibleDays = days.slice(state.userWeekOffset, state.userWeekOffset + daysPerPage);
 
-  if (userDayPager) userDayPager.hidden = maxOffset === 0;
+  if (userDayPager) userDayPager.hidden = false;
 
   const usersWithShifts = new Map();
   days.forEach((date) => {
@@ -4850,6 +4892,18 @@ if (userNextPage) {
     state.userWeekOffset = 0;
     await loadTeamWeekShifts();
     renderUserDashboard();
+  });
+}
+
+if (userPrevDay) {
+  userPrevDay.addEventListener("click", async () => {
+    await moveUserCalendarDay(-1);
+  });
+}
+
+if (userNextDay) {
+  userNextDay.addEventListener("click", async () => {
+    await moveUserCalendarDay(1);
   });
 }
 
