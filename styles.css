@@ -356,6 +356,13 @@ button.ghost {
   gap: 22px;
 }
 
+.card-actions-stack {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 8px;
+}
+
 .nav-button {
   display: inline-flex;
   align-items: center;

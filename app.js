@@ -127,8 +127,6 @@ const modeOncall = document.getElementById("modeOncall");
 const modeVacation = document.getElementById("modeVacation");
 const teamCalendarGrid = document.getElementById("teamCalendarGrid");
 const teamCalendarLabel = document.getElementById("teamCalendarLabel");
-const teamCalendarPrev = document.getElementById("teamCalendarPrev");
-const teamCalendarNext = document.getElementById("teamCalendarNext");
 const teamCalendarLegend = document.getElementById("teamCalendarLegend");
 const teamCalendarMode = document.getElementById("teamCalendarMode");
 const teamModeWork = document.getElementById("teamModeWork");
@@ -136,6 +134,10 @@ const teamModeOncall = document.getElementById("teamModeOncall");
 const teamSubteamFilter = document.getElementById("teamSubteamFilter");
 const teamSubteamFilterRow = document.getElementById("teamSubteamFilterRow");
 const teamCalendarDayPager = document.getElementById("teamCalendarDayPager");
+const teamCalendarPrev = document.getElementById("teamCalendarPrev");
+const teamCalendarNext = document.getElementById("teamCalendarNext");
+const teamCalendarPrevDay = document.getElementById("teamCalendarPrevDay");
+const teamCalendarNextDay = document.getElementById("teamCalendarNextDay");
 const teamWeekSummary = document.getElementById("teamWeekSummary");
 const teamCoreCard = document.getElementById("teamCoreCard");
 const teamCoreStart = document.getElementById("teamCoreStart");
@@ -519,6 +521,68 @@ function formatDate(date) {
     weekday: "long",
     day: "2-digit",
     month: "long",
+  });
+}
+
+async function moveTeamCalendarDay(delta) {
+  if (!state.teamCalendarWeekStart) state.teamCalendarWeekStart = getWeekStart(new Date());
+  const daysPerPage = state.teamCalendarWeekPageSize || 1;
+  const maxOffset = Math.max(0, 7 - daysPerPage);
+  const nextOffset = state.teamCalendarWeekOffset + delta;
+
+  if (nextOffset < 0) {
+    const prevWeek = new Date(state.teamCalendarWeekStart);
+    prevWeek.setDate(prevWeek.getDate() - 7);
+    state.teamCalendarWeekStart = prevWeek;
+    state.teamCalendarWeekOffset = maxOffset;
+    await loadTeamWeekShifts();
+    renderTeamCalendar();
+    return;
+  }
+
+  if (nextOffset > maxOffset) {
+    const nextWeek = new Date(state.teamCalendarWeekStart);
+    nextWeek.setDate(nextWeek.getDate() + 7);
+    state.teamCalendarWeekStart = nextWeek;
+    state.teamCalendarWeekOffset = 0;
+    await loadTeamWeekShifts();
+    renderTeamCalendar();
+    return;
+  }
+
+  state.teamCalendarWeekOffset = nextOffset;
+  renderTeamCalendar();
+}
+
+if (teamCalendarPrev) {
+  teamCalendarPrev.addEventListener("click", async () => {
+    if (!state.teamCalendarWeekStart) state.teamCalendarWeekStart = getWeekStart(new Date());
+    state.teamCalendarWeekStart.setDate(state.teamCalendarWeekStart.getDate() - 7);
+    state.teamCalendarWeekOffset = 0;
+    await loadTeamWeekShifts();
+    renderTeamCalendar();
+  });
+}
+
+if (teamCalendarNext) {
+  teamCalendarNext.addEventListener("click", async () => {
+    if (!state.teamCalendarWeekStart) state.teamCalendarWeekStart = getWeekStart(new Date());
+    state.teamCalendarWeekStart.setDate(state.teamCalendarWeekStart.getDate() + 7);
+    state.teamCalendarWeekOffset = 0;
+    await loadTeamWeekShifts();
+    renderTeamCalendar();
+  });
+}
+
+if (teamCalendarPrevDay) {
+  teamCalendarPrevDay.addEventListener("click", async () => {
+    await moveTeamCalendarDay(-1);
+  });
+}
+
+if (teamCalendarNextDay) {
+  teamCalendarNextDay.addEventListener("click", async () => {
+    await moveTeamCalendarDay(1);
   });
 }
 
@@ -4933,26 +4997,6 @@ if (savePasswordBtn) {
     } catch {
       if (passwordNotice) passwordNotice.textContent = "Speichern fehlgeschlagen.";
     }
-  });
-}
-
-if (teamCalendarPrev) {
-  teamCalendarPrev.addEventListener("click", async () => {
-    if (!state.teamCalendarWeekStart) state.teamCalendarWeekStart = getWeekStart(new Date());
-    state.teamCalendarWeekStart.setDate(state.teamCalendarWeekStart.getDate() - 7);
-    state.teamCalendarWeekOffset = 0;
-    await loadTeamWeekShifts();
-    renderTeamCalendar();
-  });
-}
-
-if (teamCalendarNext) {
-  teamCalendarNext.addEventListener("click", async () => {
-    if (!state.teamCalendarWeekStart) state.teamCalendarWeekStart = getWeekStart(new Date());
-    state.teamCalendarWeekStart.setDate(state.teamCalendarWeekStart.getDate() + 7);
-    state.teamCalendarWeekOffset = 0;
-    await loadTeamWeekShifts();
-    renderTeamCalendar();
   });
 }
 

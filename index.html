@@ -327,9 +327,15 @@
               <div class="card-title" id="teamCalendarLabel"></div>
               <div class="card-actions">
                 <div class="week-summary" id="teamWeekSummary" hidden></div>
-                <div class="month-nav">
-                  <button class="ghost nav-button" id="teamCalendarPrev">← <span>Woche zurück</span></button>
-                  <button class="ghost nav-button" id="teamCalendarNext"><span>Woche weiter</span> →</button>
+                <div class="card-actions-stack">
+                  <div class="month-nav">
+                    <button class="ghost nav-button" id="teamCalendarPrev">← <span>Woche zurück</span></button>
+                    <button class="ghost nav-button" id="teamCalendarNext"><span>Woche weiter</span> →</button>
+                  </div>
+                  <div class="month-nav" id="teamCalendarDayPager">
+                    <button class="ghost nav-button" id="teamCalendarPrevDay">← <span>Tag zurück</span></button>
+                    <button class="ghost nav-button" id="teamCalendarNextDay"><span>Tag weiter</span> →</button>
+                  </div>
                 </div>
               </div>
             </div>
