@@ -687,6 +687,31 @@ function getOncallEntryByType(dateKeyValue, type) {
   return entries.find((entry) => (entry.oncallType || entry.status) === type) || null;
 }
 
+function getVisibleRangeMinutes(isOncall, core) {
+  if (isOncall || !core || !core.start || !core.end) {
+    return { start: 0, end: 1440 };
+  }
+  const coreStart = minutesBetween("00:00", core.start);
+  const coreEnd = minutesBetween("00:00", core.end);
+  let start = coreStart - 60;
+  let end = coreEnd + 60;
+  start = Math.max(0, start);
+  end = Math.min(1440, end);
+  if (end <= start) return { start: 0, end: 1440 };
+  return { start, end };
+}
+
+function clampRange(start, end, range) {
+  const clampedStart = Math.max(start, range.start);
+  const clampedEnd = Math.min(end, range.end);
+  if (clampedEnd <= clampedStart) return null;
+  return { start: clampedStart, end: clampedEnd };
+}
+
+function rangeTopPercent(minutes, range) {
+  return ((minutes - range.start) / (range.end - range.start)) * 100;
+}
+
 function renderWeekSummary() {}
 
 function isWeekendDate(date) {
@@ -1151,10 +1176,16 @@ function renderTeamCalendar() {
     const body = document.createElement("div");
     body.className = "day-body";
 
-    for (let h = 0; h <= 24; h += 1) {
+    const range = getVisibleRangeMinutes(isOncall, core);
+    const totalMinutes = range.end - range.start;
+    body.style.height = `${(totalMinutes / 60) * 40}px`;
+    const startHour = Math.ceil(range.start / 60);
+    const endHour = Math.floor(range.end / 60);
+    for (let h = startHour; h <= endHour; h += 1) {
+      const minutes = h * 60;
       const label = document.createElement("div");
       label.className = "hour-label";
-      label.style.top = `${(h / 24) * 100}%`;
+      label.style.top = `${rangeTopPercent(minutes, range)}%`;
       label.textContent = `${String(h).padStart(2, "0")}:00`;
       body.appendChild(label);
     }
@@ -1163,7 +1194,7 @@ function renderTeamCalendar() {
       const coreTypes = Object.keys(oncallCoreMap || {});
       addOncallCoreLines(body, oncallCoreMap, coreTypes, date);
     } else {
-      addCoreLines(body, core);
+      addCoreLines(body, core, range);
     }
 
     const key = dateKey(date);
@@ -1211,9 +1242,10 @@ function renderTeamCalendar() {
         const start = minutesBetween("00:00", seg.start);
         let end = minutesBetween("00:00", seg.end);
         if (end <= start) end = 1440;
-        if (end <= start) return;
-        const top = (start / 1440) * 100;
-        const height = ((end - start) / 1440) * 100;
+        const clamped = clampRange(start, end, range);
+        if (!clamped) return;
+        const top = rangeTopPercent(clamped.start, range);
+        const height = ((clamped.end - clamped.start) / (range.end - range.start)) * 100;
         const bar = document.createElement("div");
         bar.className = "shift-bar";
         bar.style.top = `${top}%`;
@@ -1229,7 +1261,8 @@ function renderTeamCalendar() {
         const avatarOffset = avatarSize + 6;
         segments.forEach((seg) => {
           const start = minutesBetween("00:00", seg.start);
-          const top = (start / 1440) * 100;
+          if (start < range.start || start > range.end) return;
+          const top = rangeTopPercent(start, range);
           const stackIndex = avatarCounts.get(u.id) || 0;
           avatarCounts.set(u.id, stackIndex + 1);
           const onClick =
@@ -2114,20 +2147,21 @@ function minutesBetween(start, end) {
   return (eh * 60 + em) - (sh * 60 + sm);
 }
 
-function addCoreLines(container, core) {
+function addCoreLines(container, core, range) {
   if (!container || !core || !core.start || !core.end) return;
   const startMinutes = minutesBetween("00:00", core.start);
   const endMinutes = minutesBetween("00:00", core.end);
-  if (Number.isFinite(startMinutes)) {
+  const activeRange = range || { start: 0, end: 1440 };
+  if (Number.isFinite(startMinutes) && startMinutes >= activeRange.start && startMinutes <= activeRange.end) {
     const line = document.createElement("div");
     line.className = "core-line core-start";
-    line.style.top = `${(Math.max(0, Math.min(1440, startMinutes)) / 1440) * 100}%`;
+    line.style.top = `${rangeTopPercent(startMinutes, activeRange)}%`;
     container.appendChild(line);
   }
-  if (Number.isFinite(endMinutes)) {
+  if (Number.isFinite(endMinutes) && endMinutes >= activeRange.start && endMinutes <= activeRange.end) {
     const line = document.createElement("div");
     line.className = "core-line core-end";
-    line.style.top = `${(Math.max(0, Math.min(1440, endMinutes)) / 1440) * 100}%`;
+    line.style.top = `${rangeTopPercent(endMinutes, activeRange)}%`;
     container.appendChild(line);
   }
 }
@@ -3764,10 +3798,16 @@ function renderUserDashboard() {
       openDayModalWithType(date, isVacation ? "work" : state.dashboardMode);
     });
 
-    for (let h = 0; h <= 24; h += 1) {
+    const range = getVisibleRangeMinutes(isOncall, getCurrentTeamCore());
+    const totalMinutes = range.end - range.start;
+    body.style.height = `${(totalMinutes / 60) * 40}px`;
+    const startHour = Math.ceil(range.start / 60);
+    const endHour = Math.floor(range.end / 60);
+    for (let h = startHour; h <= endHour; h += 1) {
+      const minutes = h * 60;
       const label = document.createElement("div");
       label.className = "hour-label";
-      label.style.top = `${(h / 24) * 100}%`;
+      label.style.top = `${rangeTopPercent(minutes, range)}%`;
       label.textContent = `${String(h).padStart(2, "0")}:00`;
       body.appendChild(label);
     }
@@ -3775,7 +3815,7 @@ function renderUserDashboard() {
   if (isOncall) {
     addOncallCoreLines(body, oncallCoreMap, getUserOncallTypes(), date);
   } else {
-    addCoreLines(body, getCurrentTeamCore());
+    addCoreLines(body, getCurrentTeamCore(), range);
   }
 
     const key = dateKey(date);
@@ -3824,9 +3864,10 @@ function renderUserDashboard() {
         const start = minutesBetween("00:00", seg.start);
         let end = minutesBetween("00:00", seg.end);
         if (end <= start) end = 1440;
-        if (end <= start) return;
-        const top = (start / 1440) * 100;
-        const height = ((end - start) / 1440) * 100;
+        const clamped = clampRange(start, end, range);
+        if (!clamped) return;
+        const top = rangeTopPercent(clamped.start, range);
+        const height = ((clamped.end - clamped.start) / (range.end - range.start)) * 100;
         const bar = document.createElement("div");
         bar.className = "shift-bar";
         bar.style.top = `${top}%`;
@@ -3839,7 +3880,8 @@ function renderUserDashboard() {
         const u = userList[userIndex];
         segments.forEach((seg) => {
           const start = minutesBetween("00:00", seg.start);
-          const top = (start / 1440) * 100;
+          if (start < range.start || start > range.end) return;
+          const top = rangeTopPercent(start, range);
           body.appendChild(
             createShiftAvatar(u, top, left, null, {
               prio: isOncall ? entry.oncallPriority : null,
